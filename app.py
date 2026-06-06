@@ -44,6 +44,12 @@ if st.button("Analyze Compost"):
 
         image = Image.open(uploaded_file)
 
+        for m in genai.list_models():
+            st.write(m.name)
+            
+            
+  
+
         model = genai.GenerativeModel("gemini-1.5-flash")
 
         prompt = """
