@@ -29,18 +29,14 @@ turned = st.number_input(
 )
 
 if st.button("Analyze Compost"):
+if st.button("Analyze Compost"):
 
-    st.subheader("🤖 Analysis Result")
+    if days < 10:
+        st.success("Fresh Compost")
 
-    st.success("Active Compost Stage")
+    elif days < 25:
+        st.success("Active Compost")
 
-    st.metric("Health Score", "82/100")
-    st.metric("Estimated Maturity", "7-10 Days")
-
-    st.write("### Recommendation")
-    st.write("• Turn compost within 2 days")
-    st.write("• Add dry leaves if moisture increases")
-    st.write("• Monitor odor levels")
-
-    if uploaded_file:
-        st.image(uploaded_file, caption="Uploaded Compost Image")
+    else:
+        st.success("Maturing Compost")
+  
