@@ -29,7 +29,6 @@ turned = st.number_input(
 )
 
 if st.button("Analyze Compost"):
-if st.button("Analyze Compost"):
 
     if days < 10:
         st.success("Fresh Compost")
