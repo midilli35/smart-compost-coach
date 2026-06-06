@@ -1,46 +1,51 @@
 import streamlit as st
+import google.generativeai as genai
+from PIL import Image
+
+genai.configure(
+    api_key=st.secrets["GEMINI_API_KEY"]
+)
 
 st.set_page_config(page_title="Smart Compost Coach")
 
 st.title("🌱 Smart Compost Coach")
-
-st.write("Upload a compost photo and get AI-inspired recommendations.")
 
 uploaded_file = st.file_uploader(
     "Upload Compost Photo",
     type=["jpg", "jpeg", "png"]
 )
 
-days = st.number_input(
-    "Days Since Compost Started",
-    min_value=0,
-    value=15
-)
-
-smell = st.radio(
-    "Bad Smell Present?",
-    ["No", "Yes"]
-)
-
-turned = st.number_input(
-    "Days Since Last Turning",
-    min_value=0,
-    value=3
-)
-
 if st.button("Analyze Compost"):
 
-    st.subheader("🤖 Analysis Result")
+    if uploaded_file is None:
+        st.warning("Please upload a compost photo.")
 
-    st.success("Active Compost Stage")
+    else:
 
-    st.metric("Health Score", "82/100")
-    st.metric("Estimated Maturity", "7-10 Days")
+        image = Image.open(uploaded_file)
 
-    st.write("### Recommendation")
-    st.write("• Turn compost within 2 days")
-    st.write("• Add dry leaves if moisture increases")
-    st.write("• Monitor odor levels")
+        model = genai.GenerativeModel("gemini-2.0-flash")
 
-    if uploaded_file:
-        st.image(uploaded_file, caption="Uploaded Compost Image")
+        prompt = """
+        You are an expert compost advisor.
+
+        Analyze this compost image and provide:
+
+        1. Compost Stage
+        2. Moisture Condition
+        3. Compost Health Score (0-100)
+        4. Possible Issues
+        5. Recommendations
+        6. Estimated Time Until Ready
+
+        Keep the response concise and practical.
+        """
+
+        response = model.generate_content(
+            [prompt, image]
+        )
+
+        st.subheader("🤖 AI Compost Analysis")
+        st.write(response.text)
+
+        st.image(image, caption="Uploaded Compost Image")
