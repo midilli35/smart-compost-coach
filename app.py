@@ -53,7 +53,8 @@ if st.button("Analyze Compost"):
         model = genai.GenerativeModel("gemini-2.5-flash")
 
         prompt = """
-        {
+Return ONLY valid JSON with this exact structure:
+{
   "health_score": 0,
   "moisture": "",
   "balance": "",
@@ -61,7 +62,6 @@ if st.button("Analyze Compost"):
   "problems": [],
   "recommendations": []
 }
-
 Rules:
 - health_score must be between 0 and 100
 - moisture must be only one of these: Dry, Optimal, Wet
@@ -83,15 +83,25 @@ Rules:
             col1, col2, col3 = st.columns(3)
 
             with col1:
-                st.metric("🌱 Health", f"{data['health_score']}/100")
+                st.metric("🌱 Health Score", f"{data['health_score']}/100")
+                if data["health_score"] >= 80:
+                    st.success("Excellent")
+                elif data["health_score"] >= 60:
+                    st.info("Good")
+                elif data["health_score"] >= 40:
+                    st.warning("Needs Attention")
+                else:
+                    st.error("Poor Condition")
+
             with col2:
                 st.metric("💧 Moisture", data["moisture"])
+
             with col3:
                 st.metric("⚖️ Balance", data["balance"])
 
             st.info(f"⏳ Ready In: {data['ready_in']}")
 
-            with st.expander("⚠ Potential Problems"):
+            with st.expander(f"⚠ Potential Problems ({len(data['problems'])})"):
                 for item in data["problems"]:
                     st.write(f"• {item}")
 
