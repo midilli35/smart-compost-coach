@@ -77,7 +77,6 @@ else:
 
     prompt = """
 ```
-
 Return ONLY valid JSON.
 
 {
