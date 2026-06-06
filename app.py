@@ -1,13 +1,18 @@
 import streamlit as st
 import google.generativeai as genai
 from PIL import Image
+import json
 
-genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
+genai.configure(
+    api_key=st.secrets["GEMINI_API_KEY"]
+)
 
-st.set_page_config(page_title="Smart Compost Coach")
+st.set_page_config(
+    page_title="Smart Compost Coach",
+    layout="centered"
+)
 
 st.markdown("""
-
 <style>
 
 .hero-card{
@@ -22,32 +27,21 @@ st.markdown("""
 }
 
 .hero-title{
-    font-size:42px;
+    font-size:38px;
     font-weight:700;
     color:#2E2E2E;
-    line-height:1.1;
 }
 
 .hero-subtitle{
     color:#666666;
     margin-top:8px;
-    font-size:18px;
-}
-
-.upload-card{
-    background:white;
-    border-radius:50px;
-    padding:15px 25px;
-    border:2px solid #F0F0F0;
-    margin-top:20px;
+    font-size:16px;
 }
 
 </style>
-
 """, unsafe_allow_html=True)
 
 st.markdown("""
-
 <div class="hero-card">
     <div class="hero-title">
         🌱 Smart Compost Coach
@@ -58,59 +52,97 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-st.markdown("### 📷 Analyze your compost")
-
 uploaded_file = st.file_uploader(
     "📷 Take or Upload Photo",
     type=["jpg", "jpeg", "png"]
 )
 
-image_file = uploaded_file
-
 if st.button("Analyze Compost"):
 
-    if image_file is None:
-        st.warning("Please take or upload a compost photo.")
+    if uploaded_file is None:
+
+        st.warning("Please upload a compost photo.")
 
     else:
-        image = Image.open(image_file)
 
-        model = genai.GenerativeModel("gemini-2.5-flash")
+        image = Image.open(uploaded_file)
+
+        model = genai.GenerativeModel(
+            "gemini-2.5-flash"
+        )
 
         prompt = """
-You are an expert compost advisor.
+Return ONLY valid JSON.
 
-Analyze the compost image and return ONLY the following format:
-
-Health Score: [0-100]
-Moisture: [Dry / Optimal / Wet]
-Balance: [Carbon Rich / Balanced / Nitrogen Rich]
-Ready In: [Short estimate only]
-
-Problems:
-- item
-- item
-
-Recommendations:
-- item
-- item
-- item
+{
+  "health_score": 0,
+  "moisture": "",
+  "balance": "",
+  "ready_in": "",
+  "problems": [],
+  "recommendations": []
+}
 
 Rules:
-- Keep answers short.
-- Maximum 2 problems.
-- Maximum 3 recommendations.
-- Do not write paragraphs.
+- health_score must be between 0 and 100
+- maximum 2 problems
+- maximum 3 recommendations
+- no explanation outside JSON
 """
 
         try:
-            response = model.generate_content([prompt, image])
 
-            st.subheader("🌱 Compost Analysis")
-            st.write(response.text)
+            response = model.generate_content(
+                [prompt, image]
+            )
+
+            data = json.loads(response.text)
+
+            st.subheader("🌱 Compost Status")
+
+            col1, col2, col3 = st.columns(3)
+
+            with col1:
+                st.metric(
+                    "🌱 Health",
+                    f"{data['health_score']}/100"
+                )
+
+            with col2:
+                st.metric(
+                    "💧 Moisture",
+                    data["moisture"]
+                )
+
+            with col3:
+                st.metric(
+                    "⚖️ Balance",
+                    data["balance"]
+                )
+
+            st.info(
+                f"⏳ Ready In: {data['ready_in']}"
+            )
+
+            with st.expander("⚠ Potential Problems"):
+
+                for item in data["problems"]:
+                    st.write(f"• {item}")
+
+            with st.expander("💡 Recommendations"):
+
+                for item in data["recommendations"]:
+                    st.write(f"• {item}")
 
             with st.expander("📷 Uploaded Photo"):
-                st.image(image, use_container_width=True)
+
+                st.image(
+                    image,
+                    use_container_width=True
+                )
 
         except Exception as e:
-            st.error(f"Error: {e}")
+
+            st.error(
+                f"Error: {e}"
+            )
