@@ -96,6 +96,8 @@ Rules:
                 [prompt, image]
             )
 
+            st.write(response.text)
+            
             data = json.loads(response.text)
 
             st.subheader("🌱 Compost Status")
