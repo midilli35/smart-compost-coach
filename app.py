@@ -60,18 +60,12 @@ st.markdown("""
 
 st.markdown("### 📷 Analyze your compost")
 
-camera_photo = st.camera_input("Take a photo")
-
 uploaded_file = st.file_uploader(
-"",
-type=["jpg", "jpeg", "png"]
+    "📷 Take or Upload Photo",
+    type=["jpg", "jpeg", "png"]
 )
 
-
-if camera_photo:
-    image_file = camera_photo
-else:
-    image_file = uploaded_file
+image_file = uploaded_file
 
 if st.button("Analyze Compost"):
 
