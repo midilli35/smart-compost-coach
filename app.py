@@ -10,6 +10,8 @@ st.set_page_config(page_title="Smart Compost Coach")
 
 st.title("🌱 Smart Compost Coach")
 
+st.write("Upload a compost photo and get AI-powered recommendations.")
+
 uploaded_file = st.file_uploader(
     "Upload Compost Photo",
     type=["jpg", "jpeg", "png"]
@@ -31,21 +33,32 @@ if st.button("Analyze Compost"):
 
         Analyze this compost image and provide:
 
-        - Compost Stage
-        - Moisture Condition
-        - Compost Health Score (0-100)
-        - Possible Issues
-        - Recommendations
-        - Estimated Time Until Ready
+        1. Compost Stage
+        2. Moisture Level (Dry / Optimal / Wet)
+        3. Compost Health Score (0-100)
+        4. Carbon-Nitrogen Balance Assessment
+        5. Potential Problems
+        6. Recommended Actions
+        7. Estimated Time Until Compost Maturity
 
-        Keep the response concise and practical.
+        Keep the response concise and structured.
         """
 
-        response = model.generate_content(
-            [prompt, image]
-        )
+        try:
 
-        st.subheader("🤖 AI Compost Analysis")
-        st.write(response.text)
+            response = model.generate_content(
+                [prompt, image]
+            )
 
-        st.image(image, caption="Uploaded Compost Image")
+            st.subheader("🤖 AI Compost Analysis")
+            st.write(response.text)
+
+            st.image(
+                image,
+                caption="Uploaded Compost Image",
+                use_container_width=True
+            )
+
+        except Exception as e:
+
+            st.error(f"Error: {e}")
