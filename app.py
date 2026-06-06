@@ -17,10 +17,35 @@ uploaded_file = st.file_uploader(
 
 if st.button("Analyze Compost"):
 
-    model = genai.GenerativeModel("gemini-2.5-flash")
+    if uploaded_file is None:
+        st.warning("Please upload a compost photo.")
 
-    response = model.generate_content(
-        "Say hello in one sentence."
-    )
+    else:
 
-    st.write(response.text)
+        image = Image.open(uploaded_file)
+
+        model = genai.GenerativeModel("gemini-2.5-flash")
+
+        prompt = """
+        You are an expert compost advisor.
+
+        Analyze this compost image and provide:
+
+        - Compost Stage
+        - Moisture Condition
+        - Compost Health Score (0-100)
+        - Possible Issues
+        - Recommendations
+        - Estimated Time Until Ready
+
+        Keep the response concise and practical.
+        """
+
+        response = model.generate_content(
+            [prompt, image]
+        )
+
+        st.subheader("🤖 AI Compost Analysis")
+        st.write(response.text)
+
+        st.image(image, caption="Uploaded Compost Image")
