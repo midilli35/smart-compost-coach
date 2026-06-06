@@ -37,12 +37,33 @@ turned = st.number_input(
 
 if st.button("Analyze Compost"):
 
-    if days < 10:
-        st.success("Fresh Compost")
-
-    elif days < 25:
-        st.success("Active Compost")
+    if uploaded_file is None:
+        st.warning("Please upload a compost photo.")
 
     else:
-        st.success("Maturing Compost")
-  
+
+        image = Image.open(uploaded_file)
+
+        model = genai.GenerativeModel("gemini-1.5-flash")
+
+        prompt = """
+        You are an expert compost advisor.
+
+        Analyze this compost image and provide:
+
+        - Compost Stage
+        - Moisture Condition
+        - Possible Issues
+        - Recommendations
+
+        Keep the response short and practical.
+        """
+
+        response = model.generate_content(
+            [prompt, image]
+        )
+
+        st.subheader("🤖 AI Compost Analysis")
+        st.write(response.text)
+
+        st.image(image, caption="Uploaded Compost Image")
