@@ -1,7 +1,5 @@
 import streamlit as st
-
 import google.generativeai as genai
-from PIL import Image
 
 genai.configure(
     api_key=st.secrets["GEMINI_API_KEY"]
@@ -11,59 +9,15 @@ st.set_page_config(page_title="Smart Compost Coach")
 
 st.title("🌱 Smart Compost Coach")
 
-st.write("Upload a compost photo and get AI-inspired recommendations.")
-
-uploaded_file = st.file_uploader(
-    "Upload Compost Photo",
-    type=["jpg", "jpeg", "png"]
-)
-
-days = st.number_input(
-    "Days Since Compost Started",
-    min_value=0,
-    value=15
-)
-
-smell = st.radio(
-    "Bad Smell Present?",
-    ["No", "Yes"]
-)
-
-turned = st.number_input(
-    "Days Since Last Turning",
-    min_value=0,
-    value=3
-)
+st.write("Gemini API Test")
 
 if st.button("Analyze Compost"):
 
-    if uploaded_file is None:
-        st.warning("Please upload a compost photo.")
+    model = genai.GenerativeModel("gemini-2.0-flash")
 
-    else:
+    response = model.generate_content(
+        "Say hello in one sentence."
+    )
 
-        image = Image.open(uploaded_file)
-
-        model = genai.GenerativeModel("gemini-2.0-flash")
-
-        prompt = """
-        You are an expert compost advisor.
-
-        Analyze this compost image and provide:
-
-        - Compost Stage
-        - Moisture Condition
-        - Possible Issues
-        - Recommendations
-
-        Keep the response short and practical.
-        """
-
-        response = model.generate_content(
-            [prompt, image]
-        )
-
-        st.subheader("🤖 AI Compost Analysis")
-        st.write(response.text)
-
-        st.image(image, caption="Uploaded Compost Image")
+    st.subheader("🤖 AI Test")
+    st.write(response.text)
