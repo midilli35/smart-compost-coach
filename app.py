@@ -53,8 +53,7 @@ if st.button("Analyze Compost"):
         model = genai.GenerativeModel("gemini-2.5-flash")
 
         prompt = """
-Return ONLY valid JSON with this exact structure:
-{
+        {
   "health_score": 0,
   "moisture": "",
   "balance": "",
@@ -64,10 +63,13 @@ Return ONLY valid JSON with this exact structure:
 }
 
 Rules:
-* health_score must be between 0 and 100
-* maximum 2 problems
-* maximum 3 recommendations
-* no explanation outside JSON
+- health_score must be between 0 and 100
+- moisture must be only one of these: Dry, Optimal, Wet
+- balance must be only one of these: Carbon Rich, Balanced, Nitrogen Rich
+- ready_in must be very short, like: 2 weeks, 1 month, 3 months, 6 months
+- maximum 2 problems
+- maximum 3 recommendations
+- no explanation outside JSON
 """
 
         try:
