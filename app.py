@@ -1,5 +1,12 @@
 import streamlit as st
 
+import google.generativeai as genai
+from PIL import Image
+
+genai.configure(
+    api_key=st.secrets["GEMINI_API_KEY"]
+)
+
 st.set_page_config(page_title="Smart Compost Coach")
 
 st.title("🌱 Smart Compost Coach")
