@@ -1,4 +1,4 @@
-import streamlit as st
+﻿import streamlit as st
 import google.generativeai as genai
 from PIL import Image
 import json
@@ -812,6 +812,10 @@ setTimeout(function(){
 </div>
 """, unsafe_allow_html=True)
 
+    _, close_top_col = st.columns([8, 1])
+    with close_top_col:
+        close_analysis_top = st.button("✕", use_container_width=True, key="close_analysis_top", help="Kapat")
+
     uploaded_file = st.file_uploader(
         "Fotoğraf",
         type=["jpg","jpeg","png"],
@@ -827,7 +831,7 @@ setTimeout(function(){
 
     st.markdown("</div>", unsafe_allow_html=True)
 
-    if close_analysis:
+    if close_analysis or close_analysis_top:
         st.session_state.analysis_open = False
         st.rerun()
 
