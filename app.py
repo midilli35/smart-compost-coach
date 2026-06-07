@@ -869,17 +869,50 @@ rule_stage, rule_journey_pct = journey_from_age(age_days, compost_type)
 # ANALYSIS MODAL OVERLAY
 # ─────────────────────────────────────────────
 if st.session_state.analysis_open:
-    # Render the overlay backdrop + modal box via HTML
+    # Inject backdrop via JS so it truly sits above all Streamlit chrome
     st.markdown("""
-<div class="modal-overlay">
-  <div class="modal-box">
-    <div class="modal-header">
-      <div class="modal-title">📷 Kompostunu Analiz Et</div>
-    </div>
-    <div class="upload-zone">
-      <div class="upload-title">Fotoğraf yükle</div>
-      <div class="upload-hint">Fotoğraf seç veya sürükle bırak • JPG, PNG</div>
-    </div>
+<style>
+#analysisBackdrop {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(18, 18, 38, 0.58);
+  backdrop-filter: blur(7px);
+  -webkit-backdrop-filter: blur(7px);
+  z-index: 999998;
+}
+</style>
+<div id="analysisBackdrop"></div>
+<script>
+(function() {
+  function hoist() {
+    var el = document.getElementById('analysisBackdrop');
+    if (el && el.parentElement !== document.body) {
+      document.body.appendChild(el);
+    }
+  }
+  hoist();
+  setTimeout(hoist, 80);
+  setTimeout(hoist, 250);
+})();
+</script>
+""", unsafe_allow_html=True)
+
+    st.markdown("""
+<div class="sheet-card" style="
+  position:relative;
+  z-index:999999;
+  border-radius:28px;
+  box-shadow: 0 28px 70px rgba(18,18,60,0.28);
+  border: 2px solid #E8E8FC;
+  margin-bottom:0;
+">
+  <div class="sheet-head">
+    <div class="sheet-title">📷 Kompostunu Analiz Et</div>
+  </div>
+  <div class="upload-zone">
+    <div class="upload-title">Fotoğraf yükle</div>
+    <div class="upload-hint">Fotoğraf seç veya sürükle bırak • JPG, PNG</div>
+  </div>
 """, unsafe_allow_html=True)
 
     uploaded_file = st.file_uploader(
@@ -894,7 +927,7 @@ if st.session_state.analysis_open:
     with col_close:
         close_analysis_clicked = st.button("✕ Kapat", use_container_width=True, key="close_analysis")
 
-    st.markdown("</div></div>", unsafe_allow_html=True)
+    st.markdown("</div>", unsafe_allow_html=True)
 
     if close_analysis_clicked:
         st.session_state.analysis_open = False
@@ -994,8 +1027,8 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# Clickable compost info pills
-p1, p2, p3 = st.columns([1.4, 1.0, 1.2])
+# Clickable compost info pills — equal width columns
+p1, p2, p3 = st.columns([1, 1, 1])
 with p1:
     if st.button(compost_type, use_container_width=True, key="edit_type_pill"):
         st.session_state.edit_open = True
@@ -1089,11 +1122,15 @@ with b2:
 if done_clicked:
     st.session_state.care_done = True
     st.session_state.last_turn_date = date.today()
-    st.balloons()
+    st.session_state.show_balloons = True
     st.rerun()
 
 if later_clicked:
     st.session_state.care_done = False
+
+if st.session_state.get("show_balloons"):
+    st.balloons()
+    st.session_state.show_balloons = False
 
 if st.session_state.care_done:
     st.markdown("""
