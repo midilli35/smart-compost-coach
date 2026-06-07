@@ -434,6 +434,142 @@ div[data-testid="stHorizontalBlock"] div[data-testid="stButton"] > button {
 .sheet-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
 .sheet-title { font-size: 18px; font-weight: 800; color: var(--royal); letter-spacing: -0.03em; }
 .sheet-item { display:flex; gap:10px; margin-bottom:10px; align-items:flex-start; font-size:13px; color:var(--mid); line-height:1.5; }
+
+/* V18 additions */
+.history-card {
+  background: #FFFDF7;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 14px;
+  margin-top: 14px;
+}
+
+.history-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 8px;
+}
+
+.history-title {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--dark);
+}
+
+.history-note {
+  font-size: 10px;
+  color: var(--light);
+  font-weight: 700;
+}
+
+.sparkline {
+  display: flex;
+  align-items: end;
+  gap: 5px;
+  height: 38px;
+  margin-top: 8px;
+}
+
+.sparkbar {
+  flex: 1;
+  min-width: 10px;
+  border-radius: 999px 999px 4px 4px;
+  background: linear-gradient(180deg, var(--peri), var(--royal));
+  opacity: .9;
+}
+
+.coach-card {
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  padding: 18px;
+  margin-bottom: 14px;
+  box-shadow: 0 8px 26px rgba(70,76,230,0.045);
+}
+
+.coach-label {
+  font-size: 10px;
+  color: var(--light);
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  font-weight: 800;
+  margin-bottom: 7px;
+}
+
+.coach-text {
+  font-size: 14px;
+  color: var(--dark);
+  line-height: 1.45;
+  font-weight: 700;
+}
+
+.goal-card {
+  background: #FFFDF7;
+  border: 1px solid #F2E2B8;
+  border-radius: 22px;
+  padding: 18px;
+  margin-bottom: 14px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.035);
+}
+
+.goal-title {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--dark);
+  margin-bottom: 10px;
+}
+
+.goal-item {
+  font-size: 13px;
+  color: var(--mid);
+  line-height: 1.55;
+  margin-bottom: 6px;
+  font-weight: 650;
+}
+
+.impact-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.impact-card {
+  background: white;
+  border-radius: 18px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  box-shadow: 0 8px 22px rgba(70,76,230,0.04);
+}
+
+.impact-icon {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: #F0F1FF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 8px;
+}
+
+.impact-label {
+  font-size: 10px;
+  color: var(--light);
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  font-weight: 800;
+}
+
+.impact-value {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--dark);
+  letter-spacing: -.04em;
+  margin-top: 3px;
+}
+
 </style>
 """,
     unsafe_allow_html=True,
@@ -548,17 +684,36 @@ def last_turn_message(days_since_turn: int) -> str:
     return f"{days_since_turn} gün önce"
 
 
-def journey_from_age(age_days: int, compost_type: str, health_score: int | None = None) -> tuple[str, int]:
+def journey_from_age(
+    age_days: int,
+    compost_type: str,
+    health_score: int | None = None,
+    days_since_turn: int | None = None,
+) -> tuple[str, int]:
+    """Compost Journey = age progress + AI health + care rhythm.
+
+    This avoids showing a poorly maintained compost as mature only because time passed.
+    """
     total_days = 90 if "Sıcak" in compost_type else 180
     age_pct = max(8, min(95, int((age_days / total_days) * 100)))
 
-    # AI should influence the journey gently, not dominate it.
-    if health_score is not None:
-        health_factor = max(0.75, min(1.15, health_score / 75))
-        pct = int(age_pct * health_factor)
-        pct = max(8, min(95, pct))
+    if days_since_turn is None:
+        care_score = 70
     else:
-        pct = age_pct
+        interval = turning_interval_days(compost_type)
+        if days_since_turn <= interval:
+            care_score = 90
+        elif days_since_turn <= interval + 4:
+            care_score = 65
+        else:
+            care_score = 40
+
+    if health_score is None:
+        health_score = 70
+
+    # 60% age + 25% AI health + 15% care rhythm
+    pct = int((age_pct * 0.60) + (health_score * 0.25) + (care_score * 0.15))
+    pct = max(8, min(95, pct))
 
     if pct < 25:
         stage = "Başlangıç"
@@ -598,6 +753,10 @@ def normalize_ai_data(data: dict) -> dict:
         score = 60
     score = max(0, min(100, score))
 
+    coach_note = data.get("coach_note") or data.get("coach_message") or ""
+    if not coach_note:
+        coach_note = "Kompostunu izlemeye devam et; küçük bakım adımları süreci hızlandırır."
+
     return {
         "health_score": score,
         "moisture": data.get("moisture", "Belirsiz"),
@@ -605,7 +764,75 @@ def normalize_ai_data(data: dict) -> dict:
         "ready_in": data.get("ready_in", "3-6 ay"),
         "issue": make_short_label(issue, 5) or "Belirgin sorun yok",
         "recommendations": recs or ["Havalandırmayı sürdür"],
+        "coach_note": str(coach_note).strip(),
     }
+
+
+def make_weekly_goals(ai_data: dict | None, days_since_turn: int, compost_type: str) -> list[str]:
+    """Rule-based weekly goals using Gemini's diagnosis, not Gemini-generated goals."""
+    goals = []
+    interval = turning_interval_days(compost_type)
+
+    if days_since_turn >= interval:
+        goals.append("Kompostu bir kez çevir")
+
+    if ai_data:
+        moisture = ai_data.get("moisture", "")
+        balance = ai_data.get("balance", "")
+        score = int(ai_data.get("health_score", 70))
+
+        if moisture == "Kuru":
+            goals.append("Nem seviyesini artır")
+        elif moisture == "Islak":
+            goals.append("Kuru kahverengi materyal ekle")
+        else:
+            goals.append("Nem seviyesini koru")
+
+        if balance == "Karbon Fazla":
+            goals.append("Yeşil materyal ekle")
+        elif balance == "Azot Fazla":
+            goals.append("Kahverengi materyal ekle")
+        else:
+            goals.append("Dengeyi koru")
+
+        if score < 60:
+            goals.append("Koku ve sıkışmayı kontrol et")
+    else:
+        goals.append("İlk fotoğraf analizini yap")
+        goals.append("Bakım ritmini kaydet")
+
+    # Deduplicate and keep compact.
+    unique = []
+    for goal in goals:
+        if goal not in unique:
+            unique.append(goal)
+    return unique[:3]
+
+
+def compost_impact(material_amount: float, age_days: int) -> dict:
+    """Approximate, presentation-friendly impact values."""
+    weeks = max(1, age_days / 7)
+    processed_kg = round(material_amount * weeks, 1)
+    compost_kg = round(processed_kg * 0.35, 1)
+    co2_kg = round(processed_kg * 0.45, 1)
+    return {
+        "processed_kg": processed_kg,
+        "compost_kg": compost_kg,
+        "co2_kg": co2_kg,
+    }
+
+
+def sparkline_html(history: list[dict]) -> str:
+    if not history:
+        return '<div class="history-note">Henüz analiz yok</div>'
+
+    recent = history[-6:]
+    bars = []
+    for item in recent:
+        score = int(item.get("score", 0))
+        height = max(10, min(38, int(score * 0.38)))
+        bars.append(f'<div class="sparkbar" title="{score}/100" style="height:{height}px"></div>')
+    return '<div class="sparkline">' + "".join(bars) + "</div>"
 
 
 def analyze_compost_image(image: Image.Image, compost_type: str, start_date: date, age_days: int,
@@ -626,7 +853,8 @@ Required JSON:
   "balance": "",
   "ready_in": "",
   "issue": "",
-  "recommendations": []
+  "recommendations": [],
+  "coach_note": ""
 }}
 
 User data:
@@ -646,6 +874,7 @@ Rules:
 - ready_in: short Turkish estimate, e.g. "2-3 ay"
 - issue: one short Turkish phrase, max 5 words
 - recommendations: max 2 Turkish phrases, each max 5 words
+- coach_note: one friendly Turkish sentence, max 18 words
 - Keep it simple like a compost coach.
 """
     response = model.generate_content([prompt, image])
@@ -667,6 +896,7 @@ defaults = {
     "material_amount": 2.0,
     "ai_data": None,
     "ai_image": None,
+    "history": [],
 }
 
 for key, value in defaults.items():
@@ -694,7 +924,7 @@ health_for_journey = None
 if st.session_state.ai_data is not None:
     health_for_journey = st.session_state.ai_data.get("health_score")
 
-rule_stage, rule_journey_pct = journey_from_age(age_days, compost_type, health_for_journey)
+rule_stage, rule_journey_pct = journey_from_age(age_days, compost_type, health_for_journey, days_since_turn)
 
 
 # ─────────────────────────────────────────────
@@ -748,6 +978,15 @@ def analysis_dialog():
                 )
                 st.session_state.ai_data = data
                 st.session_state.ai_image = image.copy()
+
+                st.session_state.history.append({
+                    "date": date.today().strftime("%d.%m"),
+                    "score": data["health_score"],
+                    "moisture": data["moisture"],
+                    "balance": data["balance"],
+                })
+                st.session_state.history = st.session_state.history[-8:]
+
                 st.session_state.sheet = None
                 st.rerun()
             except Exception as e:
@@ -850,6 +1089,14 @@ st.markdown(
   <div class="journey-track">
     <div class="journey-fill" style="width:{rule_journey_pct}%"></div>
   </div>
+
+  <div class="history-card">
+    <div class="history-head">
+      <div class="history-title">Health History</div>
+      <div class="history-note">Son analizler</div>
+    </div>
+    {sparkline_html(st.session_state.history)}
+  </div>
 </div>
 """,
     unsafe_allow_html=True,
@@ -868,6 +1115,36 @@ with p3:
 
 if st.button("📷 Kompostunu Analiz Et", type="primary", use_container_width=True, key="open_analysis_main"):
     analysis_dialog()
+
+
+impact = compost_impact(material_amount, age_days)
+st.markdown(
+    f"""
+<div class="impact-grid">
+  <div class="impact-card">
+    <div class="impact-icon">♻️</div>
+    <div class="impact-label">Dönüştürülen Atık</div>
+    <div class="impact-value">{impact["processed_kg"]} kg</div>
+  </div>
+  <div class="impact-card">
+    <div class="impact-icon">🌍</div>
+    <div class="impact-label">Önlenen CO₂</div>
+    <div class="impact-value">{impact["co2_kg"]} kg</div>
+  </div>
+  <div class="impact-card">
+    <div class="impact-icon">🌱</div>
+    <div class="impact-label">Tahmini Kompost</div>
+    <div class="impact-value">{impact["compost_kg"]} kg</div>
+  </div>
+  <div class="impact-card">
+    <div class="impact-icon">📈</div>
+    <div class="impact-label">Analiz Sayısı</div>
+    <div class="impact-value">{len(st.session_state.history)}</div>
+  </div>
+</div>
+""",
+    unsafe_allow_html=True,
+)
 
 
 # ─────────────────────────────────────────────
@@ -923,6 +1200,22 @@ else:
 
 
 # ─────────────────────────────────────────────
+# WEEKLY GOAL — rule-based from AI output
+# ─────────────────────────────────────────────
+goals = make_weekly_goals(st.session_state.ai_data, days_since_turn, compost_type)
+goal_items = "".join([f'<div class="goal-item">☐ {goal}</div>' for goal in goals])
+st.markdown(
+    f"""
+<div class="goal-card">
+  <div class="goal-title">Bu Haftanın Hedefi</div>
+  {goal_items}
+</div>
+""",
+    unsafe_allow_html=True,
+)
+
+
+# ─────────────────────────────────────────────
 # AI RESULTS
 # ─────────────────────────────────────────────
 if st.session_state.ai_data is not None:
@@ -943,6 +1236,16 @@ if st.session_state.ai_data is not None:
     <div class="health-score-num">{score}<span>/100</span></div>
     <div class="health-status-label">{score_label(score)}</div>
   </div>
+</div>
+""",
+        unsafe_allow_html=True,
+    )
+
+    st.markdown(
+        f"""
+<div class="coach-card">
+  <div class="coach-label">AI Coach Message</div>
+  <div class="coach-text">{data.get("coach_note", "Kompostunu izlemeye devam et.")}</div>
 </div>
 """,
         unsafe_allow_html=True,
@@ -1054,4 +1357,4 @@ if st.session_state.ai_data is not None:
 # ─────────────────────────────────────────────
 # VERSION NOTE
 # ─────────────────────────────────────────────
-st.caption("Smart Compost Coach prototype · dialog-based stable version")
+st.caption("Smart Compost Coach prototype · v18 with history, impact, weekly goals")
