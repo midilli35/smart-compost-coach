@@ -63,6 +63,21 @@ footer { display: none !important; }
   overflow: visible !important;
 }
 
+/* Pill buttons — force equal height & font size so all 3 are identical */
+div[data-testid="stHorizontalBlock"] div[data-testid="stButton"] > button {
+  height: 44px !important;
+  min-height: 44px !important;
+  max-height: 44px !important;
+  font-size: 12px !important;
+  padding: 0 8px !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
 /* Hero */
 .hero-card {
   background: linear-gradient(140deg, var(--cream) 0%, var(--mustard) 100%);
@@ -592,6 +607,71 @@ div[data-testid="stButton"] > button[kind="primary"] {
   color: var(--light);
   font-weight: 800;
 
+/* ── Shared overlay backdrop ── */
+.scc-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 99998;
+  background: rgba(18, 18, 38, 0.52);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+.scc-backdrop.visible { display: block; }
+
+/* mustard-tinted glow behind the modal */
+.scc-backdrop::after {
+  content: '';
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 420px; height: 420px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,213,128,0.22) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+/* The modal card itself */
+.scc-modal {
+  position: relative;
+  z-index: 99999;
+  background: white;
+  border-radius: 28px;
+  border: 2px solid var(--mist);
+  padding: 22px 20px 26px;
+  box-shadow: 0 30px 80px rgba(18,18,60,0.26), 0 0 0 1px rgba(178,180,244,0.18);
+  animation: sccModalIn 0.24s cubic-bezier(0.34,1.4,0.64,1);
+  margin-bottom: 14px;
+}
+@keyframes sccModalIn {
+  from { opacity: 0; transform: translateY(18px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.scc-modal-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+.scc-modal-title {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--royal);
+  letter-spacing: -0.03em;
+}
+.scc-close {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  background: var(--mist);
+  border: none; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 17px; font-weight: 800;
+  color: var(--royal);
+  flex-shrink: 0;
+  transition: background 0.15s;
+}
+.scc-close:hover { background: var(--lavender); }
+
 /* Modal Overlay */
 .modal-overlay {
   position: fixed;
@@ -869,45 +949,26 @@ rule_stage, rule_journey_pct = journey_from_age(age_days, compost_type)
 # ANALYSIS MODAL OVERLAY
 # ─────────────────────────────────────────────
 if st.session_state.analysis_open:
-    # Inject backdrop via JS so it truly sits above all Streamlit chrome
+    # JS-hoisted backdrop
     st.markdown("""
-<style>
-#analysisBackdrop {
-  position: fixed;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(18, 18, 38, 0.58);
-  backdrop-filter: blur(7px);
-  -webkit-backdrop-filter: blur(7px);
-  z-index: 999998;
-}
-</style>
-<div id="analysisBackdrop"></div>
+<div id="sccAnalysisBackdrop" class="scc-backdrop visible"></div>
 <script>
-(function() {
-  function hoist() {
-    var el = document.getElementById('analysisBackdrop');
-    if (el && el.parentElement !== document.body) {
-      document.body.appendChild(el);
-    }
-  }
-  hoist();
-  setTimeout(hoist, 80);
-  setTimeout(hoist, 250);
+(function hoistBackdrop(){
+  var el = document.getElementById('sccAnalysisBackdrop');
+  if(el && el.parentElement !== document.body){ document.body.appendChild(el); }
 })();
+setTimeout(function(){
+  var el = document.getElementById('sccAnalysisBackdrop');
+  if(el && el.parentElement !== document.body){ document.body.appendChild(el); }
+}, 200);
 </script>
 """, unsafe_allow_html=True)
 
+    # Modal card (stays in flow, visually on top via z-index)
     st.markdown("""
-<div class="sheet-card" style="
-  position:relative;
-  z-index:999999;
-  border-radius:28px;
-  box-shadow: 0 28px 70px rgba(18,18,60,0.28);
-  border: 2px solid #E8E8FC;
-  margin-bottom:0;
-">
-  <div class="sheet-head">
-    <div class="sheet-title">📷 Kompostunu Analiz Et</div>
+<div class="scc-modal">
+  <div class="scc-modal-head">
+    <div class="scc-modal-title">📷 Kompostunu Analiz Et</div>
   </div>
   <div class="upload-zone">
     <div class="upload-title">Fotoğraf yükle</div>
@@ -916,16 +977,17 @@ if st.session_state.analysis_open:
 """, unsafe_allow_html=True)
 
     uploaded_file = st.file_uploader(
-        "Fotoğraf Yükle",
+        "Fotoğraf",
         type=["jpg", "jpeg", "png"],
-        label_visibility="collapsed"
+        label_visibility="collapsed",
+        key="analysis_uploader"
     )
 
-    col_analyze, col_close = st.columns([3, 1])
-    with col_analyze:
-        analyze_clicked = st.button("🔍 Kompostu Analiz Et", type="primary", use_container_width=True)
-    with col_close:
-        close_analysis_clicked = st.button("✕ Kapat", use_container_width=True, key="close_analysis")
+    btn_col1, btn_col2 = st.columns([3, 1])
+    with btn_col1:
+        analyze_clicked = st.button("🔍 Kompostu Analiz Et", type="primary", use_container_width=True, key="do_analyze")
+    with btn_col2:
+        close_analysis_clicked = st.button("✕", use_container_width=True, key="close_analysis")
 
     st.markdown("</div>", unsafe_allow_html=True)
 
@@ -939,7 +1001,6 @@ if st.session_state.analysis_open:
         else:
             image = Image.open(uploaded_file)
             model = genai.GenerativeModel("gemini-2.5-flash")
-
             prompt = f"""
 Analyze the compost image and the user's compost tracking data.
 Return ONLY valid JSON with this exact structure:
@@ -971,7 +1032,6 @@ Rules:
 * recommendations: max 3 items, each max 3 words, in Turkish
 * no explanation outside JSON
 """
-
             with st.spinner("Kompostun analiz ediliyor..."):
                 try:
                     response = model.generate_content([prompt, image])
@@ -982,7 +1042,6 @@ Rules:
                     st.session_state.analysis_open = False
                     st.session_state.sheet = None
                     st.rerun()
-
                 except Exception as e:
                     st.error(f"Analiz sırasında hata oluştu: {e}")
 
@@ -1057,19 +1116,28 @@ if st.button("📷 Kompostunu Analiz Et", use_container_width=True, key="open_an
     st.rerun()
 
 # ─────────────────────────────────────────────
-# EDIT PANEL
+# EDIT PANEL — OVERLAY MODAL
 # ─────────────────────────────────────────────
 if st.session_state.edit_open:
-    edit_close_cols = st.columns([8, 1])
-    with edit_close_cols[1]:
-        if st.button("✕", key="close_edit_panel"):
-            st.session_state.edit_open = False
-            st.rerun()
+    # JS-hoisted backdrop (mustard tint variant)
+    st.markdown("""
+<div id="sccEditBackdrop" class="scc-backdrop visible" style="background:rgba(28,22,10,0.48)"></div>
+<script>
+(function hoistEdit(){
+  var el = document.getElementById('sccEditBackdrop');
+  if(el && el.parentElement !== document.body){ document.body.appendChild(el); }
+})();
+setTimeout(function(){
+  var el = document.getElementById('sccEditBackdrop');
+  if(el && el.parentElement !== document.body){ document.body.appendChild(el); }
+}, 200);
+</script>
+""", unsafe_allow_html=True)
 
     st.markdown("""
-<div class="sheet-card">
-  <div class="sheet-head">
-    <div class="sheet-title">Kompost Bilgileri</div>
+<div class="scc-modal" style="border-color: var(--cream); box-shadow: 0 30px 80px rgba(28,22,10,0.22), 0 0 0 1px rgba(255,213,128,0.3);">
+  <div class="scc-modal-head">
+    <div class="scc-modal-title">🌱 Kompost Bilgileri</div>
   </div>
 """, unsafe_allow_html=True)
 
@@ -1090,7 +1158,11 @@ if st.session_state.edit_open:
             value=float(st.session_state.material_amount),
             step=0.5
         )
-        saved = st.form_submit_button("Kaydet")
+        ef1, ef2 = st.columns([3, 1])
+        with ef1:
+            saved = st.form_submit_button("✓ Kaydet", use_container_width=True)
+        with ef2:
+            cancel = st.form_submit_button("✕", use_container_width=True)
 
         if saved:
             st.session_state.compost_type = new_type
@@ -1098,7 +1170,10 @@ if st.session_state.edit_open:
             st.session_state.last_turn_date = new_turn
             st.session_state.material_amount = new_amount
             st.session_state.edit_open = False
-            st.success("Bilgiler güncellendi.")
+            st.rerun()
+
+        if cancel:
+            st.session_state.edit_open = False
             st.rerun()
 
     st.markdown("</div>", unsafe_allow_html=True)
