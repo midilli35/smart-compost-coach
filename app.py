@@ -58,6 +58,11 @@ footer { display: none !important; }
 .stAlert { border-radius: 16px !important; }
 .stFileUploader label { display: none !important; }
 
+/* Allow fixed positioning to work inside Streamlit */
+.stApp > iframe, [data-testid="stAppViewContainer"] {
+  overflow: visible !important;
+}
+
 /* Hero */
 .hero-card {
   background: linear-gradient(140deg, var(--cream) 0%, var(--mustard) 100%);
@@ -586,6 +591,71 @@ div[data-testid="stButton"] > button[kind="primary"] {
   letter-spacing: 0.06em;
   color: var(--light);
   font-weight: 800;
+
+/* Modal Overlay */
+.modal-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(30, 30, 50, 0.52);
+  backdrop-filter: blur(3px);
+  z-index: 9998;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 48px;
+  animation: fadeIn 0.2s ease;
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.modal-box {
+  background: white;
+  border-radius: 28px;
+  width: min(500px, 92vw);
+  max-height: 82vh;
+  overflow-y: auto;
+  padding: 22px 20px 24px;
+  position: relative;
+  box-shadow: 0 24px 60px rgba(30,30,80,0.22), 0 2px 8px rgba(70,76,230,0.10);
+  animation: slideDown 0.25s cubic-bezier(0.4,0,0.2,1);
+  z-index: 9999;
+}
+@keyframes slideDown {
+  from { transform: translateY(-28px); opacity: 0; }
+  to   { transform: translateY(0); opacity: 1; }
+}
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 18px;
+}
+.modal-title {
+  font-size: 19px;
+  font-weight: 800;
+  color: var(--royal);
+  letter-spacing: -0.03em;
+}
+.modal-close-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #F0F1FF;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 18px;
+  color: var(--royal);
+  font-weight: 800;
+  flex-shrink: 0;
+  transition: background 0.15s;
+}
+.modal-close-btn:hover {
+  background: var(--mist);
+}
 }
 </style>
 """, unsafe_allow_html=True)
@@ -796,24 +866,20 @@ turn_label = turning_message(days_until_turn)
 rule_stage, rule_journey_pct = journey_from_age(age_days, compost_type)
 
 # ─────────────────────────────────────────────
-# ANALYSIS PANEL
+# ANALYSIS MODAL OVERLAY
 # ─────────────────────────────────────────────
 if st.session_state.analysis_open:
-    c1, c2 = st.columns([8,1])
-    with c2:
-        if st.button("✕", key="close_analysis"):
-            st.session_state.analysis_open = False
-            st.rerun()
-
+    # Render the overlay backdrop + modal box via HTML
     st.markdown("""
-<div class="sheet-card">
-  <div class="sheet-head">
-    <div class="sheet-title">📷 Kompostunu Analiz Et</div>
-  </div>
-  <div class="upload-zone">
-    <div class="upload-title">Fotoğraf yükle</div>
-    <div class="upload-hint">Fotoğraf seç veya sürükle bırak • JPG, PNG</div>
-  </div>
+<div class="modal-overlay">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div class="modal-title">📷 Kompostunu Analiz Et</div>
+    </div>
+    <div class="upload-zone">
+      <div class="upload-title">Fotoğraf yükle</div>
+      <div class="upload-hint">Fotoğraf seç veya sürükle bırak • JPG, PNG</div>
+    </div>
 """, unsafe_allow_html=True)
 
     uploaded_file = st.file_uploader(
@@ -822,7 +888,17 @@ if st.session_state.analysis_open:
         label_visibility="collapsed"
     )
 
-    analyze_clicked = st.button("🔍 Kompostu Analiz Et", type="primary")
+    col_analyze, col_close = st.columns([3, 1])
+    with col_analyze:
+        analyze_clicked = st.button("🔍 Kompostu Analiz Et", type="primary", use_container_width=True)
+    with col_close:
+        close_analysis_clicked = st.button("✕ Kapat", use_container_width=True, key="close_analysis")
+
+    st.markdown("</div></div>", unsafe_allow_html=True)
+
+    if close_analysis_clicked:
+        st.session_state.analysis_open = False
+        st.rerun()
 
     if analyze_clicked:
         if uploaded_file is None:
@@ -872,13 +948,10 @@ Rules:
                     st.session_state.ai_image = image.copy()
                     st.session_state.analysis_open = False
                     st.session_state.sheet = None
-                    st.success("Analiz tamamlandı.")
                     st.rerun()
 
                 except Exception as e:
                     st.error(f"Analiz sırasında hata oluştu: {e}")
-
-    st.markdown("</div>", unsafe_allow_html=True)
 
 
 
@@ -1130,10 +1203,13 @@ if st.session_state.ai_data is not None:
         if st.button("Fotoğraf", use_container_width=True):
             st.session_state.sheet = "photo"
 
+    # ── Sheet modals ──────────────────────────────
     if st.session_state.sheet:
-        if st.button("× Kapat", use_container_width=True):
-            st.session_state.sheet = None
-            st.rerun()
+        sheet_close_col1, sheet_close_col2 = st.columns([8, 1])
+        with sheet_close_col2:
+            if st.button("✕", key="close_sheet_btn"):
+                st.session_state.sheet = None
+                st.rerun()
 
     if st.session_state.sheet == "problems":
         items = "".join([
@@ -1141,12 +1217,13 @@ if st.session_state.ai_data is not None:
             for p in probs
         ]) or '<div class="sheet-item"><span>Belirgin sorun yok.</span></div>'
         st.markdown(f"""
-<div class="sheet-card">
-  <div class="sheet-head">
-    <div class="sheet-title">Sorunlar</div>
-    <div class="sheet-x">×</div>
+<div class="modal-overlay">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div class="modal-title">⚠️ Sorunlar</div>
+    </div>
+    {items}
   </div>
-  {items}
 </div>
 """, unsafe_allow_html=True)
 
@@ -1156,38 +1233,40 @@ if st.session_state.ai_data is not None:
             for i, r in enumerate(recs)
         ]) or '<div class="sheet-item"><span>Öneri bulunamadı.</span></div>'
         st.markdown(f"""
-<div class="sheet-card">
-  <div class="sheet-head">
-    <div class="sheet-title">Öneriler</div>
-    <div class="sheet-x">×</div>
+<div class="modal-overlay">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div class="modal-title">✅ Öneriler</div>
+    </div>
+    {items}
   </div>
-  {items}
 </div>
 """, unsafe_allow_html=True)
 
     elif st.session_state.sheet == "status":
         st.markdown(f"""
-<div class="sheet-card">
-  <div class="sheet-head">
-    <div class="sheet-title">Kompost Durumu</div>
-    <div class="sheet-x">×</div>
-  </div>
-  <div class="sheet-mini-grid">
-    <div class="sheet-mini">
-      <div class="sheet-mini-label">Nem</div>
-      <div class="sheet-mini-value">{data["moisture"]}</div>
+<div class="modal-overlay">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div class="modal-title">📊 Kompost Durumu</div>
     </div>
-    <div class="sheet-mini">
-      <div class="sheet-mini-label">C/N Dengesi</div>
-      <div class="sheet-mini-value">{data["balance"]}</div>
-    </div>
-    <div class="sheet-mini">
-      <div class="sheet-mini-label">Kompost Yaşı</div>
-      <div class="sheet-mini-value">{age_days} gün</div>
-    </div>
-    <div class="sheet-mini">
-      <div class="sheet-mini-label">Sonraki Çevirme</div>
-      <div class="sheet-mini-value">{turn_label}</div>
+    <div class="sheet-mini-grid">
+      <div class="sheet-mini">
+        <div class="sheet-mini-label">Nem</div>
+        <div class="sheet-mini-value">{data["moisture"]}</div>
+      </div>
+      <div class="sheet-mini">
+        <div class="sheet-mini-label">C/N Dengesi</div>
+        <div class="sheet-mini-value">{data["balance"]}</div>
+      </div>
+      <div class="sheet-mini">
+        <div class="sheet-mini-label">Kompost Yaşı</div>
+        <div class="sheet-mini-value">{age_days} gün</div>
+      </div>
+      <div class="sheet-mini">
+        <div class="sheet-mini-label">Sonraki Çevirme</div>
+        <div class="sheet-mini-value">{turn_label}</div>
+      </div>
     </div>
   </div>
 </div>
@@ -1195,13 +1274,13 @@ if st.session_state.ai_data is not None:
 
     elif st.session_state.sheet == "photo":
         st.markdown("""
-<div class="sheet-card">
-  <div class="sheet-head">
-    <div class="sheet-title">Yüklenen Fotoğraf</div>
-    <div class="sheet-x">×</div>
-  </div>
-</div>
+<div class="modal-overlay">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div class="modal-title">🖼️ Yüklenen Fotoğraf</div>
+    </div>
 """, unsafe_allow_html=True)
         if image is not None:
             st.image(image, use_container_width=True)
+        st.markdown("</div></div>", unsafe_allow_html=True)
 
