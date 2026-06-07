@@ -55,8 +55,8 @@ st.markdown("""
 }
 header[data-testid="stHeader"] { display: none !important; }
 footer { display: none !important; }
-.stFileUploader label { display: none !important; }
 .stAlert { border-radius: 16px !important; }
+.stFileUploader label { display: none !important; }
 
 /* Hero */
 .hero-card {
@@ -101,6 +101,9 @@ footer { display: none !important; }
   margin-bottom: 14px;
   box-shadow: 0 8px 26px rgba(70,76,230,0.045);
 }
+.card.soft {
+  background: #FFFDF7;
+}
 .card-title {
   font-size: 16px;
   font-weight: 800;
@@ -114,43 +117,77 @@ footer { display: none !important; }
   line-height: 1.45;
   margin-bottom: 12px;
 }
+.card-head {
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+  gap:12px;
+  margin-bottom:10px;
+}
+.icon-chip {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: var(--cream);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
 
-/* Tracker */
-.tracker-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-  margin-bottom: 14px;
+/* My Compost */
+.compost-summary {
+  display:grid;
+  grid-template-columns: 1.15fr .85fr;
+  gap:12px;
+  margin-top:12px;
 }
-.tracker-mini {
-  background: #FFF7E6;
-  border-radius: 18px;
-  padding: 13px;
-  border: 1px solid #F2E2B8;
+.summary-main {
+  background: linear-gradient(140deg, #FFF2CC, #FFD580);
+  border: 1px solid #F2D18C;
+  border-radius: 20px;
+  padding: 16px;
 }
-.tracker-mini.alt {
+.summary-side {
   background: #F0F1FF;
-  border-color: #DADCFB;
+  border: 1px solid #DADCFB;
+  border-radius: 20px;
+  padding: 16px;
 }
-.tracker-label {
+.summary-label {
   font-size: 10px;
   color: var(--light);
   text-transform: uppercase;
-  letter-spacing: 0.06em;
-  font-weight: 700;
+  letter-spacing: .06em;
+  font-weight: 800;
 }
-.tracker-value {
-  font-size: 24px;
+.summary-value {
+  font-size: 30px;
   font-weight: 800;
   color: var(--dark);
+  letter-spacing: -.06em;
   line-height: 1.05;
-  margin-top: 3px;
-  letter-spacing: -0.04em;
+  margin-top: 4px;
 }
-.tracker-note {
+.summary-note {
   font-size: 11px;
   color: var(--mid);
-  margin-top: 4px;
+  margin-top: 6px;
+}
+.meta-row {
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  margin-top:12px;
+}
+.meta-pill {
+  background:#F8F6EF;
+  border:1px solid var(--line);
+  color:var(--mid);
+  border-radius:999px;
+  padding:7px 10px;
+  font-size:11px;
+  font-weight:700;
 }
 
 /* Journey */
@@ -206,8 +243,9 @@ footer { display: none !important; }
   border-radius: 18px;
   padding: 14px 16px;
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 700;
   margin-top: 10px;
+  margin-bottom: 14px;
   box-shadow: 4px 4px 0 rgba(178,180,244,0.45);
 }
 .info-note {
@@ -218,6 +256,7 @@ footer { display: none !important; }
   padding: 14px 16px;
   font-size: 13px;
   margin-top: 10px;
+  margin-bottom: 14px;
 }
 
 /* Buttons */
@@ -255,7 +294,7 @@ div[data-testid="stButton"] > button[kind="primary"] {
 .upload-title {
   font-size: 14px;
   color: var(--mid);
-  font-weight: 700;
+  font-weight: 800;
 }
 .upload-hint {
   font-size: 11px;
@@ -278,8 +317,18 @@ div[data-testid="stButton"] > button[kind="primary"] {
   margin-bottom: 14px;
   display: flex;
   align-items: center;
-  gap: 18px;
+  gap: 16px;
   box-shadow: 0 10px 24px rgba(232,101,10,0.08);
+}
+.health-icon-small {
+  width:56px;
+  height:56px;
+  border-radius:50%;
+  background:#FFE9BD;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  flex-shrink:0;
 }
 .health-text-block h4 {
   font-size: 11px;
@@ -305,7 +354,7 @@ div[data-testid="stButton"] > button[kind="primary"] {
 .health-status-label {
   font-size: 12px;
   color: #7A5E20;
-  font-weight: 600;
+  font-weight: 700;
 }
 
 /* Metrics */
@@ -327,7 +376,7 @@ div[data-testid="stButton"] > button[kind="primary"] {
   color: var(--light);
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  font-weight: 700;
+  font-weight: 800;
   margin-bottom: 4px;
 }
 .metric-value {
@@ -357,7 +406,7 @@ div[data-testid="stButton"] > button[kind="primary"] {
   color: var(--light);
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  font-weight: 700;
+  font-weight: 800;
 }
 .maturity-value {
   font-size: 14px;
@@ -512,7 +561,7 @@ div[data-testid="stButton"] > button[kind="primary"] {
   color:var(--light);
   text-transform:uppercase;
   letter-spacing:.06em;
-  font-weight:700;
+  font-weight:800;
 }
 .sheet-mini-value {
   font-size:18px;
@@ -566,18 +615,11 @@ HERO_PATTERN = """
   <path d="M120 70 L130 70 M125 65 L125 75" stroke="#7A5E20" stroke-width="1"/>
 </svg>"""
 
-WORM_SVG = """
-<svg viewBox="0 0 72 72" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:72px;height:72px;flex-shrink:0">
-  <circle cx="36" cy="36" r="32" fill="#FFE9BD"/>
-  <rect x="12" y="48" width="48" height="14" rx="4" fill="#C8A060" opacity="0.4"/>
-  <rect x="12" y="54" width="48" height="8" rx="3" fill="#A07840" opacity="0.3"/>
-  <path d="M20 50 Q22 44 26 45 Q30 46 28 50 Q26 54 30 53 Q34 52 34 48 Q34 44 38 44"
-        stroke="#E86040" stroke-width="3" fill="none" stroke-linecap="round"/>
-  <circle cx="38" cy="43" r="3" fill="#E86040"/>
-  <circle cx="39" cy="42" r="1" fill="white"/>
-  <path d="M48 47 L48 38" stroke="#5A8A40" stroke-width="1.5" stroke-linecap="round"/>
-  <path d="M48 41 Q44 38 43 34 Q47 33 49 37Z" fill="#7ABD5A"/>
-  <path d="M48 44 Q52 41 53 37 Q49 36 47 40Z" fill="#5A8A40"/>
+SPROUT_SVG = """
+<svg viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:30px;height:30px">
+  <path d="M22 34 L22 19" stroke="#5A8A40" stroke-width="2.2" stroke-linecap="round"/>
+  <path d="M22 22 Q15 18 14 11 Q21 11 25 17 Q26 20 22 22Z" fill="#7ABD5A"/>
+  <path d="M22 27 Q29 22 31 15 Q24 14 20 21 Q19 24 22 27Z" fill="#5A8A40"/>
 </svg>"""
 
 MOISTURE_SVG = """
@@ -692,10 +734,27 @@ PALETTE = ["#464CE6", "#7C80ED", "#B2B4F4"]
 # ─────────────────────────────────────────────
 # SESSION STATE
 # ─────────────────────────────────────────────
+today = date.today()
 if "sheet" not in st.session_state:
     st.session_state.sheet = None
 if "care_done" not in st.session_state:
     st.session_state.care_done = False
+if "edit_open" not in st.session_state:
+    st.session_state.edit_open = False
+if "analysis_open" not in st.session_state:
+    st.session_state.analysis_open = False
+if "compost_type" not in st.session_state:
+    st.session_state.compost_type = "Ev tipi / soğuk kompost"
+if "start_date" not in st.session_state:
+    st.session_state.start_date = today - timedelta(days=22)
+if "last_turn_date" not in st.session_state:
+    st.session_state.last_turn_date = today - timedelta(days=3)
+if "material_amount" not in st.session_state:
+    st.session_state.material_amount = 2.0
+if "ai_data" not in st.session_state:
+    st.session_state.ai_data = None
+if "ai_image" not in st.session_state:
+    st.session_state.ai_image = None
 
 # ─────────────────────────────────────────────
 # HERO
@@ -712,31 +771,12 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 # ─────────────────────────────────────────────
-# USER / RULE-BASED INPUTS
+# RULE-BASED VALUES
 # ─────────────────────────────────────────────
-with st.expander("⚙️ Kompost bilgileri", expanded=True):
-    today = date.today()
-    default_start = today - timedelta(days=22)
-    default_turn = today - timedelta(days=3)
-
-    compost_type = st.selectbox(
-        "Kompost tipi",
-        ["Ev tipi / soğuk kompost", "Bahçe tipi / soğuk kompost", "Sıcak kompost"],
-        index=0
-    )
-
-    c1, c2 = st.columns(2)
-    with c1:
-        start_date = st.date_input("Başlangıç tarihi", value=default_start)
-    with c2:
-        last_turn_date = st.date_input("Son çevirme tarihi", value=default_turn)
-
-    material_amount = st.number_input(
-        "Yaklaşık materyal miktarı (kg)",
-        min_value=0.0,
-        value=2.0,
-        step=0.5
-    )
+compost_type = st.session_state.compost_type
+start_date = st.session_state.start_date
+last_turn_date = st.session_state.last_turn_date
+material_amount = st.session_state.material_amount
 
 age_days = max(0, (date.today() - start_date).days)
 interval = turning_interval_days(compost_type)
@@ -747,27 +787,38 @@ turn_label = turning_message(days_until_turn)
 rule_stage, rule_journey_pct = journey_from_age(age_days, compost_type)
 
 # ─────────────────────────────────────────────
-# ALWAYS VISIBLE TRACKER
+# MY COMPOST DASHBOARD
 # ─────────────────────────────────────────────
 st.markdown(f"""
 <div class="card">
-  <div class="card-title">Merhaba 🌱</div>
-  <div class="card-sub">Bugün kompostunu takip etmek için küçük bir adım yeterli.</div>
-
-  <div class="tracker-grid">
-    <div class="tracker-mini">
-      <div class="tracker-label">Kompost Yaşı</div>
-      <div class="tracker-value">{age_days} gün</div>
-      <div class="tracker-note">{rule_stage} dönemi</div>
+  <div class="card-head">
+    <div>
+      <div class="card-title">My Compost</div>
+      <div class="card-sub">Kompost bilgilerini kaydet; takip ve AI analizi buna göre güncellensin.</div>
     </div>
-    <div class="tracker-mini alt">
-      <div class="tracker-label">Sonraki Çevirme</div>
-      <div class="tracker-value">{turn_label}</div>
-      <div class="tracker-note">Son çevirme: {days_since_turn} gün önce</div>
+    <div class="icon-chip">{SPROUT_SVG}</div>
+  </div>
+
+  <div class="compost-summary">
+    <div class="summary-main">
+      <div class="summary-label">Kompost Yaşı</div>
+      <div class="summary-value">{age_days} gün</div>
+      <div class="summary-note">{rule_stage} dönemi</div>
+    </div>
+    <div class="summary-side">
+      <div class="summary-label">Sonraki Çevirme</div>
+      <div class="summary-value" style="font-size:22px;letter-spacing:-.04em;">{turn_label}</div>
+      <div class="summary-note">Son çevirme: {days_since_turn} gün önce</div>
     </div>
   </div>
 
-  <div class="card-title" style="font-size:15px;margin-top:4px;">Compost Journey</div>
+  <div class="meta-row">
+    <span class="meta-pill">{compost_type}</span>
+    <span class="meta-pill">Yaklaşık {material_amount:.1f} kg</span>
+    <span class="meta-pill">Başlangıç: {start_date.strftime('%d.%m.%Y')}</span>
+  </div>
+
+  <div class="card-title" style="font-size:15px;margin-top:16px;">Compost Journey</div>
   <div class="journey-row">
     <span class="journey-step {'active' if rule_stage == 'Başlangıç' else ''}">Başlangıç</span>
     <span class="journey-step {'active' if rule_stage == 'Aktif' else ''}">Aktif</span>
@@ -780,6 +831,61 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
+btn_col1, btn_col2 = st.columns(2)
+with btn_col1:
+    if st.button("Bilgileri Düzenle", use_container_width=True):
+        st.session_state.edit_open = not st.session_state.edit_open
+        st.session_state.sheet = None
+with btn_col2:
+    if st.button("+ Yeni Analiz", use_container_width=True):
+        st.session_state.analysis_open = not st.session_state.analysis_open
+        st.session_state.sheet = None
+
+# ─────────────────────────────────────────────
+# EDIT PANEL
+# ─────────────────────────────────────────────
+if st.session_state.edit_open:
+    st.markdown("""
+<div class="sheet-card">
+  <div class="sheet-head">
+    <div class="sheet-title">Kompost Bilgileri</div>
+    <div class="sheet-x">×</div>
+  </div>
+""", unsafe_allow_html=True)
+
+    with st.form("compost_info_form"):
+        new_type = st.selectbox(
+            "Kompost tipi",
+            ["Ev tipi / soğuk kompost", "Bahçe tipi / soğuk kompost", "Sıcak kompost"],
+            index=["Ev tipi / soğuk kompost", "Bahçe tipi / soğuk kompost", "Sıcak kompost"].index(st.session_state.compost_type)
+        )
+        f1, f2 = st.columns(2)
+        with f1:
+            new_start = st.date_input("Başlangıç tarihi", value=st.session_state.start_date)
+        with f2:
+            new_turn = st.date_input("Son çevirme tarihi", value=st.session_state.last_turn_date)
+        new_amount = st.number_input(
+            "Yaklaşık materyal miktarı (kg)",
+            min_value=0.0,
+            value=float(st.session_state.material_amount),
+            step=0.5
+        )
+        saved = st.form_submit_button("Kaydet")
+
+        if saved:
+            st.session_state.compost_type = new_type
+            st.session_state.start_date = new_start
+            st.session_state.last_turn_date = new_turn
+            st.session_state.material_amount = new_amount
+            st.session_state.edit_open = False
+            st.success("Bilgiler güncellendi.")
+            st.rerun()
+
+    st.markdown("</div>", unsafe_allow_html=True)
+
+# ─────────────────────────────────────────────
+# DAILY CHECK-IN
+# ─────────────────────────────────────────────
 st.markdown("""
 <div class="check-card">
   <div class="check-title">Günlük Kontrol</div>
@@ -813,29 +919,37 @@ else:
 """, unsafe_allow_html=True)
 
 # ─────────────────────────────────────────────
-# UPLOAD / AI SECTION
+# ANALYSIS PANEL
 # ─────────────────────────────────────────────
-st.markdown("""
-<div class="upload-zone">
-  <div class="upload-title">📷 Yeni analiz yap</div>
-  <div class="upload-hint">Fotoğraf seç veya sürükle bırak • JPG, PNG</div>
-</div>
+if st.session_state.analysis_open:
+    st.markdown("""
+<div class="sheet-card">
+  <div class="sheet-head">
+    <div class="sheet-title">Yeni Analiz</div>
+    <div class="sheet-x">×</div>
+  </div>
+  <div class="upload-zone">
+    <div class="upload-title">Fotoğraf yükle</div>
+    <div class="upload-hint">Fotoğraf seç veya sürükle bırak • JPG, PNG</div>
+  </div>
 """, unsafe_allow_html=True)
 
-uploaded_file = st.file_uploader(
-    "Fotoğraf Yükle",
-    type=["jpg", "jpeg", "png"],
-    label_visibility="collapsed"
-)
+    uploaded_file = st.file_uploader(
+        "Fotoğraf Yükle",
+        type=["jpg", "jpeg", "png"],
+        label_visibility="collapsed"
+    )
 
-if st.button("🔍 Kompostu Analiz Et", type="primary"):
-    if uploaded_file is None:
-        st.warning("Lütfen önce bir kompost fotoğrafı yükleyin.")
-    else:
-        image = Image.open(uploaded_file)
-        model = genai.GenerativeModel("gemini-2.5-flash")
+    analyze_clicked = st.button("🔍 Kompostu Analiz Et", type="primary")
 
-        prompt = f"""
+    if analyze_clicked:
+        if uploaded_file is None:
+            st.warning("Lütfen önce bir kompost fotoğrafı yükleyin.")
+        else:
+            image = Image.open(uploaded_file)
+            model = genai.GenerativeModel("gemini-2.5-flash")
+
+            prompt = f"""
 Analyze the compost image and the user's compost tracking data.
 Return ONLY valid JSON with this exact structure:
 {{
@@ -851,8 +965,10 @@ User tracking data:
 - Compost type: {compost_type}
 - Start date: {start_date}
 - Compost age: {age_days} days
+- Current journey stage: {rule_stage}
 - Last turning date: {last_turn_date}
 - Days since last turning: {days_since_turn}
+- Next turning due in: {days_until_turn} days
 - Approximate material amount: {material_amount} kg
 
 Rules:
@@ -865,23 +981,38 @@ Rules:
 * no explanation outside JSON
 """
 
-        with st.spinner("Kompostun analiz ediliyor..."):
-            try:
-                response = model.generate_content([prompt, image])
-                clean = response.text.strip().replace("```json", "").replace("```", "")
-                data = json.loads(clean)
+            with st.spinner("Kompostun analiz ediliyor..."):
+                try:
+                    response = model.generate_content([prompt, image])
+                    clean = response.text.strip().replace("```json", "").replace("```", "")
+                    data = json.loads(clean)
+                    st.session_state.ai_data = data
+                    st.session_state.ai_image = image.copy()
+                    st.session_state.analysis_open = False
+                    st.session_state.sheet = None
+                    st.success("Analiz tamamlandı.")
+                    st.rerun()
 
-                score = data["health_score"]
-                progress, avg_months = parse_months(data.get("ready_in", "4 ay"))
-                bar_pct = int(progress * 100)
+                except Exception as e:
+                    st.error(f"Analiz sırasında hata oluştu: {e}")
 
-                probs = data.get("problems", [])
-                recs = data.get("recommendations", [])
+    st.markdown("</div>", unsafe_allow_html=True)
 
-                # HEALTH
-                st.markdown(f"""
+# ─────────────────────────────────────────────
+# AI RESULTS
+# ─────────────────────────────────────────────
+if st.session_state.ai_data is not None:
+    data = st.session_state.ai_data
+    image = st.session_state.ai_image
+    score = data["health_score"]
+    progress, avg_months = parse_months(data.get("ready_in", "4 ay"))
+    bar_pct = int(progress * 100)
+    probs = data.get("problems", [])
+    recs = data.get("recommendations", [])
+
+    st.markdown(f"""
 <div class="health-card">
-  {WORM_SVG}
+  <div class="health-icon-small">{SPROUT_SVG}</div>
   <div class="health-text-block">
     <h4>Health Score</h4>
     <div class="health-score-num">{score}<span>/100</span></div>
@@ -890,8 +1021,7 @@ Rules:
 </div>
 """, unsafe_allow_html=True)
 
-                # METRICS
-                st.markdown(f"""
+    st.markdown(f"""
 <div class="metrics-grid">
   <div class="metric-card">
     {MOISTURE_SVG}
@@ -906,8 +1036,7 @@ Rules:
 </div>
 """, unsafe_allow_html=True)
 
-                # MATURITY
-                st.markdown(f"""
+    st.markdown(f"""
 <div class="maturity-card">
   <div class="maturity-header">
     <span class="maturity-label">Tahmini Olgunlaşma</span>
@@ -920,17 +1049,16 @@ Rules:
 </div>
 """, unsafe_allow_html=True)
 
-                # SUMMARY CARDS
-                prob_items = "".join([
-                    f'<div class="panel-item">{tri("#E8A020")}<span>{make_short_label(p)}</span></div>'
-                    for p in probs[:2]
-                ])
-                rec_items = "".join([
-                    f'<div class="panel-item">{tri("#7C80ED")}<span>{make_short_label(r)}</span></div>'
-                    for r in recs[:2]
-                ])
+    prob_items = "".join([
+        f'<div class="panel-item">{tri("#E8A020")}<span>{make_short_label(p)}</span></div>'
+        for p in probs[:2]
+    ])
+    rec_items = "".join([
+        f'<div class="panel-item">{tri("#7C80ED")}<span>{make_short_label(r)}</span></div>'
+        for r in recs[:2]
+    ])
 
-                st.markdown(f"""
+    st.markdown(f"""
 <div class="panels-row">
   <div class="panel-card">
     <div class="panel-header problems">
@@ -951,34 +1079,31 @@ Rules:
 </div>
 """, unsafe_allow_html=True)
 
-                # DETAIL SELECTORS
-                s1, s2, s3, s4 = st.columns(4)
-                with s1:
-                    if st.button("Sorunlar", use_container_width=True):
-                        st.session_state.sheet = "problems"
-                with s2:
-                    if st.button("Öneriler", use_container_width=True):
-                        st.session_state.sheet = "recommendations"
-                with s3:
-                    if st.button("Durum", use_container_width=True):
-                        st.session_state.sheet = "status"
-                with s4:
-                    if st.button("Fotoğraf", use_container_width=True):
-                        st.session_state.sheet = "photo"
+    s1, s2, s3, s4 = st.columns(4)
+    with s1:
+        if st.button("Sorunlar", use_container_width=True):
+            st.session_state.sheet = "problems"
+    with s2:
+        if st.button("Öneriler", use_container_width=True):
+            st.session_state.sheet = "recommendations"
+    with s3:
+        if st.button("Durum", use_container_width=True):
+            st.session_state.sheet = "status"
+    with s4:
+        if st.button("Fotoğraf", use_container_width=True):
+            st.session_state.sheet = "photo"
 
-                if st.session_state.sheet:
-                    close_clicked = st.button("× Kapat", use_container_width=True)
-                    if close_clicked:
-                        st.session_state.sheet = None
-                        st.rerun()
+    if st.session_state.sheet:
+        if st.button("× Kapat", use_container_width=True):
+            st.session_state.sheet = None
+            st.rerun()
 
-                # BOTTOM SHEET SIMULATION
-                if st.session_state.sheet == "problems":
-                    items = "".join([
-                        f'<div class="sheet-item">{circle("#E8A020")}<span>{p}</span></div>'
-                        for p in probs
-                    ]) or '<div class="sheet-item"><span>Belirgin sorun yok.</span></div>'
-                    st.markdown(f"""
+    if st.session_state.sheet == "problems":
+        items = "".join([
+            f'<div class="sheet-item">{circle("#E8A020")}<span>{p}</span></div>'
+            for p in probs
+        ]) or '<div class="sheet-item"><span>Belirgin sorun yok.</span></div>'
+        st.markdown(f"""
 <div class="sheet-card">
   <div class="sheet-head">
     <div class="sheet-title">Sorunlar</div>
@@ -988,12 +1113,12 @@ Rules:
 </div>
 """, unsafe_allow_html=True)
 
-                elif st.session_state.sheet == "recommendations":
-                    items = "".join([
-                        f'<div class="sheet-item">{circle(PALETTE[i % 3])}<span>{r}</span></div>'
-                        for i, r in enumerate(recs)
-                    ]) or '<div class="sheet-item"><span>Öneri bulunamadı.</span></div>'
-                    st.markdown(f"""
+    elif st.session_state.sheet == "recommendations":
+        items = "".join([
+            f'<div class="sheet-item">{circle(PALETTE[i % 3])}<span>{r}</span></div>'
+            for i, r in enumerate(recs)
+        ]) or '<div class="sheet-item"><span>Öneri bulunamadı.</span></div>'
+        st.markdown(f"""
 <div class="sheet-card">
   <div class="sheet-head">
     <div class="sheet-title">Öneriler</div>
@@ -1003,8 +1128,8 @@ Rules:
 </div>
 """, unsafe_allow_html=True)
 
-                elif st.session_state.sheet == "status":
-                    st.markdown(f"""
+    elif st.session_state.sheet == "status":
+        st.markdown(f"""
 <div class="sheet-card">
   <div class="sheet-head">
     <div class="sheet-title">Kompost Durumu</div>
@@ -1031,8 +1156,8 @@ Rules:
 </div>
 """, unsafe_allow_html=True)
 
-                elif st.session_state.sheet == "photo":
-                    st.markdown("""
+    elif st.session_state.sheet == "photo":
+        st.markdown("""
 <div class="sheet-card">
   <div class="sheet-head">
     <div class="sheet-title">Yüklenen Fotoğraf</div>
@@ -1040,7 +1165,6 @@ Rules:
   </div>
 </div>
 """, unsafe_allow_html=True)
-                    st.image(image, use_container_width=True)
+        if image is not None:
+            st.image(image, use_container_width=True)
 
-            except Exception as e:
-                st.error(f"Analiz sırasında hata oluştu: {e}")
