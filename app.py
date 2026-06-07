@@ -281,12 +281,13 @@ div[data-testid="stHorizontalBlock"] div[data-testid="stButton"] > button {
 
 
 .goal-card {
-  background: #E8E8FC;
-  border: 1.5px solid #B2B4F4;
+  background: white;
+  border: 1px solid #E5E5E5;
   border-radius: 24px;
   padding: 20px;
+  margin-top: 12px;
   margin-bottom: 16px;
-  box-shadow: 0 10px 24px rgba(124,128,237,0.10);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.05);
 }
 
 .goal-title-row {
@@ -1092,7 +1093,8 @@ div[data-testid="stVerticalBlockBorderWrapper"]:has(.weekly-goals-anchor) {
 </style>
 """, unsafe_allow_html=True)
 
-with st.container(border=True):
+with st.container():
+    st.markdown('<div class="goal-card">', unsafe_allow_html=True)
     st.markdown(
         '<div class="weekly-goals-anchor"></div>',
         unsafe_allow_html=True
