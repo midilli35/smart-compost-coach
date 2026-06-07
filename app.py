@@ -833,11 +833,11 @@ st.markdown(f"""
 
 btn_col1, btn_col2 = st.columns(2)
 with btn_col1:
-    if st.button("Bilgileri Düzenle", use_container_width=True):
+    if st.button("🪱 Kompostumu Güncelle", use_container_width=True):
         st.session_state.edit_open = not st.session_state.edit_open
         st.session_state.sheet = None
 with btn_col2:
-    if st.button("+ Yeni Analiz", use_container_width=True):
+    if st.button("📷 Kompostunu Analiz Et", use_container_width=True):
         st.session_state.analysis_open = not st.session_state.analysis_open
         st.session_state.sheet = None
 
@@ -922,11 +922,16 @@ else:
 # ANALYSIS PANEL
 # ─────────────────────────────────────────────
 if st.session_state.analysis_open:
+    c1, c2 = st.columns([8,1])
+    with c2:
+        if st.button("✕", key="close_analysis"):
+            st.session_state.analysis_open = False
+            st.rerun()
+
     st.markdown("""
 <div class="sheet-card">
   <div class="sheet-head">
-    <div class="sheet-title">Yeni Analiz</div>
-    <div class="sheet-x">×</div>
+    <div class="sheet-title">📷 Kompostunu Analiz Et</div>
   </div>
   <div class="upload-zone">
     <div class="upload-title">Fotoğraf yükle</div>
