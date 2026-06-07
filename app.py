@@ -1089,7 +1089,39 @@ goal_done_count, goal_total_count, goal_ratio = goal_completion(goals)
 
 
 with st.container():
-    st.markdown('<div class="goal-card">', unsafe_allow_html=True)
+
+    st.markdown(
+        f"""
+        <div class="goal-card">
+            <div class="goal-title-row">
+                <div class="goal-title">Bu Haftanın Hedefleri</div>
+                <div class="goal-progress">
+                    {goal_done_count}/{goal_total_count} tamamlandı
+                </div>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    for idx, goal in enumerate(goals):
+
+        key = f"goal_{idx}_{abs(hash(goal))}"
+        current = bool(st.session_state.goal_done.get(goal, False))
+
+        checked = st.checkbox(
+            goal,
+            value=current,
+            key=key
+        )
+
+        if checked != current:
+            st.session_state.goal_done[goal] = checked
+
+            if checked and goal == "Kompostu çevir":
+                st.session_state.last_turn_date = date.today()
+
+            st.rerun()
 
     st.markdown(
         f"""
