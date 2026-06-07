@@ -289,18 +289,18 @@ div[data-testid="stHorizontalBlock"] div[data-testid="stButton"] > button {
   box-shadow: 0 10px 24px rgba(255,213,128,0.22);
 }
 
-/* Hedef kutusu: st.container(border=True) varsayılan stilini yeşil karta dönüştür */
-div[data-testid="stVerticalBlockBorderWrapper"] {
-  background: linear-gradient(180deg, #FFE9BD 0%, #FFF8E8 100%) !important;
+/* Haftanın hedefleri kartı */
+.st-key-weekly_goals_card {
+  background: linear-gradient(180deg, #FFE9BD 0%, #FFF9EA 100%) !important;
   border: 1.5px solid #FFD580 !important;
   border-radius: 24px !important;
-  box-shadow: 0 10px 24px rgba(255,213,128,0.22) !important;
-  margin-top: 12px !important;
+  padding: 18px !important;
+  margin-top: 14px !important;
   margin-bottom: 16px !important;
+  box-shadow: 0 10px 24px rgba(255,213,128,0.22) !important;
 }
 
-/* Checkbox label stili */
-div[data-testid="stVerticalBlockBorderWrapper"] .stCheckbox label p {
+.st-key-weekly_goals_card .stCheckbox label p {
   font-size: 14px !important;
   font-weight: 600 !important;
   color: var(--dark) !important;
@@ -461,20 +461,31 @@ div[data-testid="stVerticalBlockBorderWrapper"] .stCheckbox label p {
 .sheet-item { display:flex; gap:10px; margin-bottom:10px; align-items:flex-start; font-size:13px; color:var(--mid); line-height:1.5; }
 
 
-.info-wrapper{
-background:white;
-border:1.5px solid #E8E8FC;
-border-radius:24px;
-padding:16px;
-margin-bottom:16px;
-box-shadow:0 8px 22px rgba(70,76,230,0.05);
+.st-key-compost_info_card {
+  background: #FFFFFF !important;
+  border: 1.5px solid #E8E8FC !important;
+  border-radius: 24px !important;
+  padding: 16px !important;
+  margin-bottom: 14px !important;
+  box-shadow: 0 8px 22px rgba(70,76,230,0.05) !important;
 }
 
-.info-header-btn div[data-testid="stButton"] > button{
-background:#464CE6 !important;
-color:white !important;
-border:1.5px solid #464CE6 !important;
-font-weight:800 !important;
+.st-key-compost_info_card div[data-testid="stButton"] > button {
+  background: #F7F7FF !important;
+  border: 1.5px solid var(--royal) !important;
+  color: var(--royal) !important;
+  height: 44px !important;
+  min-height: 44px !important;
+}
+
+.st-key-compost_info_header div[data-testid="stButton"] > button {
+  background: linear-gradient(90deg, #464CE6 0%, #3E43D5 100%) !important;
+  color: white !important;
+  border-color: #464CE6 !important;
+  height: 46px !important;
+  min-height: 46px !important;
+  font-size: 14px !important;
+  font-weight: 800 !important;
 }
 
 </style>
@@ -1104,33 +1115,31 @@ st.markdown(
 
 
 # ─── Kompost Bilgileri Kartı ───
-st.markdown('<div class="info-wrapper"><div class="info-header-btn">', unsafe_allow_html=True)
-if st.button("Kompost Bilgileri", use_container_width=True, key="compost_info_header"):
-    edit_compost_dialog()
-st.markdown('</div>', unsafe_allow_html=True)
+with st.container(key="compost_info_card"):
+    with st.container(key="compost_info_header"):
+        if st.button("Kompost Bilgileri", use_container_width=True, key="compost_info_header_btn"):
+            edit_compost_dialog()
 
-# ─── Info pills (2×2 grid) ───
-row1_col1, row1_col2 = st.columns(2)
-with row1_col1:
-    if st.button(compost_type, use_container_width=True, key="edit_type_pill"):
-        edit_compost_dialog()
-with row1_col2:
-    if st.button(f"Yaklaşık {material_amount:.1f} kg", use_container_width=True, key="edit_amount_pill"):
-        edit_compost_dialog()
+    # Info pills (2×2 grid)
+    row1_col1, row1_col2 = st.columns(2)
+    with row1_col1:
+        if st.button(compost_type, use_container_width=True, key="edit_type_pill"):
+            edit_compost_dialog()
+    with row1_col2:
+        if st.button(f"Yaklaşık {material_amount:.1f} kg", use_container_width=True, key="edit_amount_pill"):
+            edit_compost_dialog()
 
-row2_col1, row2_col2 = st.columns(2)
-with row2_col1:
-    if st.button(
-        f"Başlangıç: {start_date.strftime('%d.%m.%Y')}",
-        use_container_width=True,
-        key="edit_start_pill",
-    ):
-        edit_compost_dialog()
-with row2_col2:
-    if st.button(f"Koku: {odor_status}", use_container_width=True, key="edit_odor_pill"):
-        edit_compost_dialog()
-
-st.markdown("</div>", unsafe_allow_html=True)
+    row2_col1, row2_col2 = st.columns(2)
+    with row2_col1:
+        if st.button(
+            f"Başlangıç: {start_date.strftime('%d.%m.%Y')}",
+            use_container_width=True,
+            key="edit_start_pill",
+        ):
+            edit_compost_dialog()
+    with row2_col2:
+        if st.button(f"Koku: {odor_status}", use_container_width=True, key="edit_odor_pill"):
+            edit_compost_dialog()
 
 # ─── Analyze button ───
 if st.button("📷 Kompostunu Analiz Et", type="primary", use_container_width=True, key="open_analysis_main"):
@@ -1155,9 +1164,8 @@ if st.session_state.analysis_ready and st.session_state.ai_data is not None:
 # ─────────────────────────────────────────────
 goal_done_count, goal_total_count, goal_ratio = goal_completion(goals)
 
-# st.container(border=True) bir stVerticalBlockBorderWrapper üretir.
-# CSS'te bu wrapper'ı yeşil karta dönüştürüyoruz.
-with st.container(border=True):
+with st.container(key="weekly_goals_card"):
+
     # Başlık satırı
     st.markdown(
         f"""
