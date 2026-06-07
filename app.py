@@ -94,10 +94,10 @@ footer { display: none !important; }
 .upload-zone {
   border: 1.5px dashed #C8B88A;
   border-radius: 18px;
-  padding: 26px 16px;
-  text-align: center;
+  padding: 14px 14px;
+  text-align: left;
   background: #FFFDF7;
-  margin-bottom: 14px;
+  margin-bottom: 10px;
   cursor: pointer;
 }
 .upload-title {
@@ -415,11 +415,67 @@ div[data-testid="stButton"] > button:active {
   margin-bottom: 10px;
 }
 
+
+/* ── ALWAYS VISIBLE DASHBOARD ── */
+.welcome-card {
+  background: white;
+  border-radius: 22px;
+  padding: 18px;
+  border: 1px solid #EDE8DC;
+  margin-bottom: 16px;
+}
+.welcome-title {
+  font-family: 'Fraunces', serif;
+  font-size: 22px;
+  color: var(--dark);
+  margin-bottom: 4px;
+}
+.welcome-sub {
+  font-size: 13px;
+  color: var(--mid);
+  margin-bottom: 14px;
+}
+.tracker-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.tracker-mini {
+  background: #FFF7E6;
+  border-radius: 15px;
+  padding: 12px;
+  border: 1px solid #F2E2B8;
+}
+.tracker-mini.green {
+  background: #EEF5EE;
+  border-color: #D7E5D6;
+}
+.tracker-label {
+  font-size: 10px;
+  color: var(--light);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.tracker-value {
+  font-family: 'Fraunces', serif;
+  font-size: 24px;
+  color: var(--dark);
+  line-height: 1.1;
+}
+.tracker-note {
+  font-size: 11px;
+  color: var(--mid);
+  margin-top: 3px;
+}
+
 /* ── FILE UPLOADER STYLE ── */
 .stFileUploader [data-testid="stFileUploaderDropzone"] {
   background: #FFFDF7 !important;
   border: 1.5px dashed #C8B88A !important;
   border-radius: 18px !important;
+  min-height: 58px !important;
+  padding: 10px !important;
 }
 
 /* Hide default streamlit metrics label formatting */
@@ -578,13 +634,67 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 # ─────────────────────────────────────────────
+# PAGE: ALWAYS VISIBLE TRACKER
+# ─────────────────────────────────────────────
+st.markdown("""
+<div class="welcome-card">
+  <div class="welcome-title">Merhaba 🌱</div>
+  <div class="welcome-sub">Bugün kompostunu takip etmek için küçük bir adım yeterli.</div>
+
+  <div class="tracker-grid">
+    <div class="tracker-mini">
+      <div class="tracker-label">Kompost Yaşı</div>
+      <div class="tracker-value">22 gün</div>
+      <div class="tracker-note">Aktif ayrışma dönemi</div>
+    </div>
+    <div class="tracker-mini green">
+      <div class="tracker-label">Sonraki Görev</div>
+      <div class="tracker-value">Çevir</div>
+      <div class="tracker-note">Bugün veya yarın</div>
+    </div>
+  </div>
+
+  <div class="journey-title">🌱 Compost Journey</div>
+  <div class="journey-row">
+    <span>🌱 Başlangıç</span>
+    <span class="journey-step active">🪱 Aktif</span>
+    <span>🌿 Olgunlaşma</span>
+    <span>✅ Hazır</span>
+  </div>
+  <div class="journey-track">
+    <div class="journey-fill" style="width:50%"></div>
+  </div>
+</div>
+""", unsafe_allow_html=True)
+
+st.markdown("""
+<div class="check-card">
+  <div class="check-title">✅ Günlük Kontrol</div>
+  <div class="check-sub">Bugün kompostu çevirdin mi?</div>
+</div>
+""", unsafe_allow_html=True)
+
+turned_today_global = st.radio(
+    "Günlük kontrol",
+    ["Henüz Değil", "Evet"],
+    horizontal=True,
+    label_visibility="collapsed",
+    key="daily_checkin"
+)
+
+if turned_today_global == "Evet":
+    st.success("Harika! Kompostun daha sağlıklı hale geliyor 🌱")
+    st.balloons()
+else:
+    st.info("Kompostu çevirmek havalanmayı artırır ve ayrışmayı hızlandırır.")
+
+# ─────────────────────────────────────────────
 # PAGE: UPLOAD SECTION
 # ─────────────────────────────────────────────
-st.markdown(f"""
+st.markdown("""
 <div class="upload-zone">
-  {UPLOAD_SVG}
-  <div class="upload-title"><strong>Fotoğraf seç</strong> veya sürükle bırak</div>
-  <div class="upload-hint">JPG, PNG • Kompost yığınının üstten çekilmiş fotoğrafı</div>
+  <div class="upload-title"><strong>📷 Yeni analiz yap</strong></div>
+  <div class="upload-hint">Fotoğraf seç veya sürükle bırak • JPG, PNG</div>
 </div>
 """, unsafe_allow_html=True)
 
@@ -672,51 +782,6 @@ Rules:
   <div class="maturity-dots">{dots_html(progress)}</div>
 </div>
 """, unsafe_allow_html=True)
-
-                # ── COMPOST JOURNEY ──
-                current_stage, journey_pct = journey_state(score)
-
-                start_class = "active" if current_stage == "Başlangıç" else ""
-                active_class = "active" if current_stage == "Aktif" else ""
-                mature_class = "active" if current_stage == "Olgunlaşma" else ""
-                ready_class = "active" if current_stage == "Hazır" else ""
-
-                st.markdown(f"""
-<div class="journey-card">
-  <div class="journey-title">🌱 Compost Journey</div>
-
-  <div class="journey-row">
-    <span class="journey-step {start_class}">🌱 Başlangıç</span>
-    <span class="journey-step {active_class}">🪱 Aktif</span>
-    <span class="journey-step {mature_class}">🌿 Olgunlaşma</span>
-    <span class="journey-step {ready_class}">✅ Hazır</span>
-  </div>
-
-  <div class="journey-track">
-    <div class="journey-fill" style="width:{journey_pct}%"></div>
-  </div>
-</div>
-""", unsafe_allow_html=True)
-
-                # ── DAILY CHECK-IN ──
-                st.markdown("""
-<div class="check-card">
-  <div class="check-title">✅ Günlük Kontrol</div>
-  <div class="check-sub">Bugünkü küçük görev: kompostu havalandırmayı unutma.</div>
-</div>
-""", unsafe_allow_html=True)
-
-                turned_today = st.radio(
-                    "Bugün kompostu çevirdin mi?",
-                    ["Henüz Değil", "Evet"],
-                    horizontal=True
-                )
-
-                if turned_today == "Evet":
-                    st.success("Harika! Kompostun daha sağlıklı hale geliyor 🌱")
-                    st.balloons()
-                else:
-                    st.info("Kompostu çevirmek havalanmayı artırır ve ayrışmayı hızlandırır.")
 
                 # ── SIDE-BY-SIDE PANELS ──
                 probs = data.get("problems", [])
