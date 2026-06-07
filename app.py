@@ -1034,18 +1034,32 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-p1, p2, p3, p4 = st.columns([1, 1, 1, 1])
-with p1:
+row1_col1, row1_col2 = st.columns(2)
+
+with row1_col1:
     if st.button(compost_type, use_container_width=True, key="edit_type_pill"):
         edit_compost_dialog()
-with p2:
+
+with row1_col2:
     if st.button(f"Yaklaşık {material_amount:.1f} kg", use_container_width=True, key="edit_amount_pill"):
         edit_compost_dialog()
-with p3:
-    if st.button(f"Başlangıç: {start_date.strftime('%d.%m.%Y')}", use_container_width=True, key="edit_start_pill"):
+
+row2_col1, row2_col2 = st.columns(2)
+
+with row2_col1:
+    if st.button(
+        f"Başlangıç: {start_date.strftime('%d.%m.%Y')}",
+        use_container_width=True,
+        key="edit_start_pill",
+    ):
         edit_compost_dialog()
-with p4:
-    if st.button(f"Koku: {odor_status}", use_container_width=True, key="edit_odor_pill"):
+
+with row2_col2:
+    if st.button(
+        f"Koku: {odor_status}",
+        use_container_width=True,
+        key="edit_odor_pill",
+    ):
         edit_compost_dialog()
 
 if st.button("📷 Kompostunu Analiz Et", type="primary", use_container_width=True, key="open_analysis_main"):
