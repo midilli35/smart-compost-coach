@@ -528,47 +528,10 @@ div[data-testid="stHorizontalBlock"] div[data-testid="stButton"] > button {
   font-weight: 650;
 }
 
-.impact-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-  margin-bottom: 14px;
-}
 
-.impact-card {
-  background: white;
-  border-radius: 18px;
-  padding: 14px;
-  border: 1px solid var(--line);
-  box-shadow: 0 8px 22px rgba(70,76,230,0.04);
-}
 
-.impact-icon {
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  background: #F0F1FF;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 8px;
-}
 
-.impact-label {
-  font-size: 10px;
-  color: var(--light);
-  text-transform: uppercase;
-  letter-spacing: .06em;
-  font-weight: 800;
-}
 
-.impact-value {
-  font-size: 20px;
-  font-weight: 800;
-  color: var(--dark);
-  letter-spacing: -.04em;
-  margin-top: 3px;
-}
 
 </style>
 """,
@@ -808,18 +771,6 @@ def make_weekly_goals(ai_data: dict | None, days_since_turn: int, compost_type: 
             unique.append(goal)
     return unique[:3]
 
-
-def compost_impact(material_amount: float, age_days: int) -> dict:
-    """Approximate, presentation-friendly impact values."""
-    weeks = max(1, age_days / 7)
-    processed_kg = round(material_amount * weeks, 1)
-    compost_kg = round(processed_kg * 0.35, 1)
-    co2_kg = round(processed_kg * 0.45, 1)
-    return {
-        "processed_kg": processed_kg,
-        "compost_kg": compost_kg,
-        "co2_kg": co2_kg,
-    }
 
 
 def sparkline_html(history: list[dict]) -> str:
@@ -1117,87 +1068,6 @@ if st.button("📷 Kompostunu Analiz Et", type="primary", use_container_width=Tr
     analysis_dialog()
 
 
-impact = compost_impact(material_amount, age_days)
-st.markdown(
-    f"""
-<div class="impact-grid">
-  <div class="impact-card">
-    <div class="impact-icon">♻️</div>
-    <div class="impact-label">Dönüştürülen Atık</div>
-    <div class="impact-value">{impact["processed_kg"]} kg</div>
-  </div>
-  <div class="impact-card">
-    <div class="impact-icon">🌍</div>
-    <div class="impact-label">Önlenen CO₂</div>
-    <div class="impact-value">{impact["co2_kg"]} kg</div>
-  </div>
-  <div class="impact-card">
-    <div class="impact-icon">🌱</div>
-    <div class="impact-label">Tahmini Kompost</div>
-    <div class="impact-value">{impact["compost_kg"]} kg</div>
-  </div>
-  <div class="impact-card">
-    <div class="impact-icon">📈</div>
-    <div class="impact-label">Analiz Sayısı</div>
-    <div class="impact-value">{len(st.session_state.history)}</div>
-  </div>
-</div>
-""",
-    unsafe_allow_html=True,
-)
-
-
-# ─────────────────────────────────────────────
-# DAILY CHECK-IN
-# ─────────────────────────────────────────────
-st.markdown(
-    """
-<div class="check-card">
-  <div class="check-title">Günlük Kontrol</div>
-  <div class="check-sub">Bugün kompostu havalandırdın mı?</div>
-</div>
-""",
-    unsafe_allow_html=True,
-)
-
-b1, b2 = st.columns(2)
-with b1:
-    later_clicked = st.button("Daha Sonra", use_container_width=True)
-with b2:
-    done_clicked = st.button("✓ Çevirdim", use_container_width=True)
-
-if done_clicked:
-    st.session_state.care_done = True
-    st.session_state.last_turn_date = date.today()
-    st.session_state.show_balloons = True
-    st.rerun()
-
-if later_clicked:
-    st.session_state.care_done = False
-
-if st.session_state.get("show_balloons"):
-    st.balloons()
-    st.session_state.show_balloons = False
-
-if st.session_state.care_done:
-    st.markdown(
-        """
-<div class="success-note">
-  Güzel iş! Bugünkü bakım tamamlandı. Kompostun bugün biraz daha nefes aldı.
-</div>
-""",
-        unsafe_allow_html=True,
-    )
-else:
-    st.markdown(
-        """
-<div class="info-note">
-  Havalandırma, ayrışmayı hızlandırır ve kötü koku riskini azaltır.
-</div>
-""",
-        unsafe_allow_html=True,
-    )
-
 
 # ─────────────────────────────────────────────
 # WEEKLY GOAL — rule-based from AI output
@@ -1357,4 +1227,4 @@ if st.session_state.ai_data is not None:
 # ─────────────────────────────────────────────
 # VERSION NOTE
 # ─────────────────────────────────────────────
-st.caption("Smart Compost Coach prototype · v18 with history, impact, weekly goals")
+st.caption("Smart Compost Coach prototype · v19 clean goals version")
