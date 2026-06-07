@@ -286,15 +286,15 @@ div[data-testid="stHorizontalBlock"] div[data-testid="stButton"] > button {
   padding: 20px;
   margin-top: 12px;
   margin-bottom: 16px;
-  box-shadow: 0 10px 24px rgba(184,204,182,0.18);
+  box-shadow: 0 10px 24px rgba(255,213,128,0.22);
 }
 
 /* Hedef kutusu: st.container(border=True) varsayılan stilini yeşil karta dönüştür */
 div[data-testid="stVerticalBlockBorderWrapper"] {
-  background: linear-gradient(180deg, #DBE5DA 0%, #F5F8F5 100%) !important;
-  border: 1.5px solid #B8CCB6 !important;
+  background: linear-gradient(180deg, #FFE9BD 0%, #FFF8E8 100%) !important;
+  border: 1.5px solid #FFD580 !important;
   border-radius: 24px !important;
-  box-shadow: 0 10px 24px rgba(184,204,182,0.18) !important;
+  box-shadow: 0 10px 24px rgba(255,213,128,0.22) !important;
   margin-top: 12px !important;
   margin-bottom: 16px !important;
 }
@@ -459,6 +459,14 @@ div[data-testid="stVerticalBlockBorderWrapper"] .stCheckbox label p {
 
 .sheet-title { font-size: 18px; font-weight: 800; color: var(--royal); letter-spacing: -0.03em; margin-bottom: 12px; }
 .sheet-item { display:flex; gap:10px; margin-bottom:10px; align-items:flex-start; font-size:13px; color:var(--mid); line-height:1.5; }
+
+.info-header-btn div[data-testid="stButton"] > button{
+background:#464CE6 !important;
+color:white !important;
+border:1.5px solid #464CE6 !important;
+font-weight:800 !important;
+}
+
 </style>
 """,
     unsafe_allow_html=True,
@@ -1083,6 +1091,13 @@ st.markdown(
 """,
     unsafe_allow_html=True,
 )
+
+
+# ─── Kompost Bilgileri Başlığı ───
+st.markdown('<div class="info-header-btn">', unsafe_allow_html=True)
+if st.button("Kompost Bilgileri", use_container_width=True, key="compost_info_header"):
+    edit_compost_dialog()
+st.markdown('</div>', unsafe_allow_html=True)
 
 # ─── Info pills (2×2 grid) ───
 row1_col1, row1_col2 = st.columns(2)
