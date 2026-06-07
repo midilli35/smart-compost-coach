@@ -289,6 +289,24 @@ div[data-testid="stHorizontalBlock"] div[data-testid="stButton"] > button {
   box-shadow: 0 10px 24px rgba(184,204,182,0.18);
 }
 
+/* Hedef kutusu: st.container(border=True) varsayılan stilini yeşil karta dönüştür */
+div[data-testid="stVerticalBlockBorderWrapper"] {
+  background: linear-gradient(180deg, #DBE5DA 0%, #F5F8F5 100%) !important;
+  border: 1.5px solid #B8CCB6 !important;
+  border-radius: 24px !important;
+  box-shadow: 0 10px 24px rgba(184,204,182,0.18) !important;
+  margin-top: 12px !important;
+  margin-bottom: 16px !important;
+}
+
+/* Checkbox label stili */
+div[data-testid="stVerticalBlockBorderWrapper"] .stCheckbox label p {
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  color: var(--dark) !important;
+  font-family: 'Plus Jakarta Sans', sans-serif !important;
+}
+
 .goal-title-row {
   display: flex;
   justify-content: space-between;
@@ -1106,43 +1124,40 @@ if st.session_state.analysis_ready and st.session_state.ai_data is not None:
 
 
 # ─────────────────────────────────────────────
-# WEEKLY GOALS  (tek seferlik render)
+# WEEKLY GOALS
 # ─────────────────────────────────────────────
 goal_done_count, goal_total_count, goal_ratio = goal_completion(goals)
 
-st.markdown(
-    f"""
-<div class="goal-card">
-  <div class="goal-title-row">
-    <div class="goal-title">Bu Haftanın Hedefleri</div>
-    <div class="goal-progress">{goal_done_count}/{goal_total_count} tamamlandı</div>
-  </div>
+# st.container(border=True) bir stVerticalBlockBorderWrapper üretir.
+# CSS'te bu wrapper'ı yeşil karta dönüştürüyoruz.
+with st.container(border=True):
+    # Başlık satırı
+    st.markdown(
+        f"""
+<div class="goal-title-row" style="margin-bottom:6px;">
+  <div class="goal-title">Bu Haftanın Hedefleri</div>
+  <div class="goal-progress">{goal_done_count}/{goal_total_count} tamamlandı</div>
 </div>
 """,
-    unsafe_allow_html=True,
-)
+        unsafe_allow_html=True,
+    )
 
-for idx, goal in enumerate(goals):
-    key = f"goal_{idx}_{abs(hash(goal))}"
-    current = bool(st.session_state.goal_done.get(goal, False))
+    # Checkboxlar
+    for idx, goal in enumerate(goals):
+        key = f"goal_{idx}_{abs(hash(goal))}"
+        current = bool(st.session_state.goal_done.get(goal, False))
+        checked = st.checkbox(goal, value=current, key=key)
 
-    checked = st.checkbox(goal, value=current, key=key)
+        if checked != current:
+            st.session_state.goal_done[goal] = checked
+            if checked and goal == "Kompostu çevir":
+                st.session_state.last_turn_date = date.today()
+            st.rerun()
 
-    if checked != current:
-        st.session_state.goal_done[goal] = checked
-
-        # "Kompostu çevir" tamamlandığında son çevirme tarihini güncelle
-        if checked and goal == "Kompostu çevir":
-            st.session_state.last_turn_date = date.today()
-
-        st.rerun()
-
-# Tamamlanma durumunu yeniden hesapla (checkbox güncellemesinden sonra)
-goal_done_count, goal_total_count, goal_ratio = goal_completion(goals)
-
-if goal_total_count > 0 and goal_done_count == goal_total_count:
-    st.success("Harika! Bu haftaki bakım hedeflerinin tamamı tamamlandı 🌱")
-
-    if not st.session_state.goal_balloons_shown:
-        st.balloons()
-        st.session_state.goal_balloons_shown = True
+    # Tamamlanma kontrolü
+    goal_done_count, goal_total_count, goal_ratio = goal_completion(goals)
+    if goal_total_count > 0 and goal_done_count == goal_total_count:
+        st.success("Harika! Bu haftaki bakım hedeflerinin tamamı tamamlandı 🌱")
+        if not st.session_state.goal_balloons_shown:
+            st.balloons()
+            st.session_state.goal_balloons_shown = True
