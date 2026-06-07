@@ -711,6 +711,14 @@ def turning_message(days_until):
     return f"{days_until} gün sonra"
 
 
+def last_turn_message(days_since_turn):
+    if days_since_turn == 0:
+        return "Bugün"
+    if days_since_turn == 1:
+        return "Dün"
+    return f"{days_since_turn} gün önce"
+
+
 def journey_from_age(age_days, compost_type):
     total_days = 90 if "Sıcak" in compost_type else 180
     pct = max(8, min(95, int((age_days / total_days) * 100)))
@@ -781,142 +789,11 @@ material_amount = st.session_state.material_amount
 age_days = max(0, (date.today() - start_date).days)
 interval = turning_interval_days(compost_type)
 days_since_turn = max(0, (date.today() - last_turn_date).days)
+last_turn_text = last_turn_message(days_since_turn)
 next_turn_date = last_turn_date + timedelta(days=interval)
 days_until_turn = (next_turn_date - date.today()).days
 turn_label = turning_message(days_until_turn)
 rule_stage, rule_journey_pct = journey_from_age(age_days, compost_type)
-
-# ─────────────────────────────────────────────
-# MY COMPOST DASHBOARD
-# ─────────────────────────────────────────────
-st.markdown(f"""
-<div class="card">
-  <div class="card-head">
-    <div>
-      <div class="card-title">My Compost</div>
-      <div class="card-sub">Kompost bilgilerini kaydet; takip ve AI analizi buna göre güncellensin.</div>
-    </div>
-    <div class="icon-chip">{SPROUT_SVG}</div>
-  </div>
-
-  <div class="compost-summary">
-    <div class="summary-main">
-      <div class="summary-label">Kompost Yaşı</div>
-      <div class="summary-value">{age_days} gün</div>
-      <div class="summary-note">{rule_stage} dönemi</div>
-    </div>
-    <div class="summary-side">
-      <div class="summary-label">Sonraki Çevirme</div>
-      <div class="summary-value" style="font-size:22px;letter-spacing:-.04em;">{turn_label}</div>
-      <div class="summary-note">Son çevirme: {days_since_turn} gün önce</div>
-    </div>
-  </div>
-
-  <div class="meta-row">
-    <span class="meta-pill">{compost_type}</span>
-    <span class="meta-pill">Yaklaşık {material_amount:.1f} kg</span>
-    <span class="meta-pill">Başlangıç: {start_date.strftime('%d.%m.%Y')}</span>
-  </div>
-
-  <div class="card-title" style="font-size:15px;margin-top:16px;">Compost Journey</div>
-  <div class="journey-row">
-    <span class="journey-step {'active' if rule_stage == 'Başlangıç' else ''}">Başlangıç</span>
-    <span class="journey-step {'active' if rule_stage == 'Aktif' else ''}">Aktif</span>
-    <span class="journey-step {'active' if rule_stage == 'Olgunlaşma' else ''}">Olgunlaşma</span>
-    <span class="journey-step {'active' if rule_stage == 'Hazır' else ''}">Hazır</span>
-  </div>
-  <div class="journey-track">
-    <div class="journey-fill" style="width:{rule_journey_pct}%"></div>
-  </div>
-</div>
-""", unsafe_allow_html=True)
-
-btn_col1, btn_col2 = st.columns(2)
-with btn_col1:
-    if st.button("🪱 Kompostumu Güncelle", use_container_width=True):
-        st.session_state.edit_open = not st.session_state.edit_open
-        st.session_state.sheet = None
-with btn_col2:
-    if st.button("📷 Kompostunu Analiz Et", use_container_width=True):
-        st.session_state.analysis_open = not st.session_state.analysis_open
-        st.session_state.sheet = None
-
-# ─────────────────────────────────────────────
-# EDIT PANEL
-# ─────────────────────────────────────────────
-if st.session_state.edit_open:
-    st.markdown("""
-<div class="sheet-card">
-  <div class="sheet-head">
-    <div class="sheet-title">Kompost Bilgileri</div>
-    <div class="sheet-x">×</div>
-  </div>
-""", unsafe_allow_html=True)
-
-    with st.form("compost_info_form"):
-        new_type = st.selectbox(
-            "Kompost tipi",
-            ["Ev tipi / soğuk kompost", "Bahçe tipi / soğuk kompost", "Sıcak kompost"],
-            index=["Ev tipi / soğuk kompost", "Bahçe tipi / soğuk kompost", "Sıcak kompost"].index(st.session_state.compost_type)
-        )
-        f1, f2 = st.columns(2)
-        with f1:
-            new_start = st.date_input("Başlangıç tarihi", value=st.session_state.start_date)
-        with f2:
-            new_turn = st.date_input("Son çevirme tarihi", value=st.session_state.last_turn_date)
-        new_amount = st.number_input(
-            "Yaklaşık materyal miktarı (kg)",
-            min_value=0.0,
-            value=float(st.session_state.material_amount),
-            step=0.5
-        )
-        saved = st.form_submit_button("Kaydet")
-
-        if saved:
-            st.session_state.compost_type = new_type
-            st.session_state.start_date = new_start
-            st.session_state.last_turn_date = new_turn
-            st.session_state.material_amount = new_amount
-            st.session_state.edit_open = False
-            st.success("Bilgiler güncellendi.")
-            st.rerun()
-
-    st.markdown("</div>", unsafe_allow_html=True)
-
-# ─────────────────────────────────────────────
-# DAILY CHECK-IN
-# ─────────────────────────────────────────────
-st.markdown("""
-<div class="check-card">
-  <div class="check-title">Günlük Kontrol</div>
-  <div class="check-sub">Bugün kompostu havalandırdın mı?</div>
-</div>
-""", unsafe_allow_html=True)
-
-b1, b2 = st.columns(2)
-with b1:
-    later_clicked = st.button("Daha Sonra", use_container_width=True)
-with b2:
-    done_clicked = st.button("✓ Çevirdim", use_container_width=True)
-
-if done_clicked:
-    st.session_state.care_done = True
-    st.balloons()
-if later_clicked:
-    st.session_state.care_done = False
-
-if st.session_state.care_done:
-    st.markdown("""
-<div class="success-note">
-  Güzel iş! Bugünkü bakım tamamlandı. Kompostun bugün biraz daha nefes aldı.
-</div>
-""", unsafe_allow_html=True)
-else:
-    st.markdown("""
-<div class="info-note">
-  Havalandırma, ayrışmayı hızlandırır ve kötü koku riskini azaltır.
-</div>
-""", unsafe_allow_html=True)
 
 # ─────────────────────────────────────────────
 # ANALYSIS PANEL
@@ -1002,6 +879,161 @@ Rules:
                     st.error(f"Analiz sırasında hata oluştu: {e}")
 
     st.markdown("</div>", unsafe_allow_html=True)
+
+
+
+# ─────────────────────────────────────────────
+# MY COMPOST DASHBOARD
+# ─────────────────────────────────────────────
+st.markdown(f"""
+<div class="card">
+  <div class="card-head">
+    <div>
+      <div class="card-title">My Compost</div>
+      <div class="card-sub">Kompost bilgilerini kaydet; takip ve AI analizi buna göre güncellensin.</div>
+    </div>
+    <div class="icon-chip">{SPROUT_SVG}</div>
+  </div>
+
+  <div class="compost-summary">
+    <div class="summary-main">
+      <div class="summary-label">Kompost Yaşı</div>
+      <div class="summary-value">{age_days} gün</div>
+      <div class="summary-note">{rule_stage} dönemi</div>
+    </div>
+    <div class="summary-side">
+      <div class="summary-label">Sonraki Çevirme</div>
+      <div class="summary-value" style="font-size:22px;letter-spacing:-.04em;">{turn_label}</div>
+      <div class="summary-note">Son çevirme: {last_turn_text}</div>
+    </div>
+  </div>
+
+  <div class="card-title" style="font-size:15px;margin-top:16px;">Compost Journey</div>
+  <div class="journey-row">
+    <span class="journey-step {'active' if rule_stage == 'Başlangıç' else ''}">Başlangıç</span>
+    <span class="journey-step {'active' if rule_stage == 'Aktif' else ''}">Aktif</span>
+    <span class="journey-step {'active' if rule_stage == 'Olgunlaşma' else ''}">Olgunlaşma</span>
+    <span class="journey-step {'active' if rule_stage == 'Hazır' else ''}">Hazır</span>
+  </div>
+  <div class="journey-track">
+    <div class="journey-fill" style="width:{rule_journey_pct}%"></div>
+  </div>
+</div>
+""", unsafe_allow_html=True)
+
+# Clickable compost info pills
+p1, p2, p3 = st.columns([1.4, 1.0, 1.2])
+with p1:
+    if st.button(compost_type, use_container_width=True, key="edit_type_pill"):
+        st.session_state.edit_open = True
+        st.session_state.analysis_open = False
+        st.session_state.sheet = None
+        st.rerun()
+
+with p2:
+    if st.button(f"Yaklaşık {material_amount:.1f} kg", use_container_width=True, key="edit_amount_pill"):
+        st.session_state.edit_open = True
+        st.session_state.analysis_open = False
+        st.session_state.sheet = None
+        st.rerun()
+
+with p3:
+    if st.button(f"Başlangıç: {start_date.strftime('%d.%m.%Y')}", use_container_width=True, key="edit_start_pill"):
+        st.session_state.edit_open = True
+        st.session_state.analysis_open = False
+        st.session_state.sheet = None
+        st.rerun()
+
+if st.button("📷 Kompostunu Analiz Et", use_container_width=True, key="open_analysis_main"):
+    st.session_state.analysis_open = True
+    st.session_state.edit_open = False
+    st.session_state.sheet = None
+    st.rerun()
+
+# ─────────────────────────────────────────────
+# EDIT PANEL
+# ─────────────────────────────────────────────
+if st.session_state.edit_open:
+    edit_close_cols = st.columns([8, 1])
+    with edit_close_cols[1]:
+        if st.button("✕", key="close_edit_panel"):
+            st.session_state.edit_open = False
+            st.rerun()
+
+    st.markdown("""
+<div class="sheet-card">
+  <div class="sheet-head">
+    <div class="sheet-title">Kompost Bilgileri</div>
+  </div>
+""", unsafe_allow_html=True)
+
+    with st.form("compost_info_form"):
+        new_type = st.selectbox(
+            "Kompost tipi",
+            ["Ev tipi / soğuk kompost", "Bahçe tipi / soğuk kompost", "Sıcak kompost"],
+            index=["Ev tipi / soğuk kompost", "Bahçe tipi / soğuk kompost", "Sıcak kompost"].index(st.session_state.compost_type)
+        )
+        f1, f2 = st.columns(2)
+        with f1:
+            new_start = st.date_input("Başlangıç tarihi", value=st.session_state.start_date)
+        with f2:
+            new_turn = st.date_input("Son çevirme tarihi", value=st.session_state.last_turn_date)
+        new_amount = st.number_input(
+            "Yaklaşık materyal miktarı (kg)",
+            min_value=0.0,
+            value=float(st.session_state.material_amount),
+            step=0.5
+        )
+        saved = st.form_submit_button("Kaydet")
+
+        if saved:
+            st.session_state.compost_type = new_type
+            st.session_state.start_date = new_start
+            st.session_state.last_turn_date = new_turn
+            st.session_state.material_amount = new_amount
+            st.session_state.edit_open = False
+            st.success("Bilgiler güncellendi.")
+            st.rerun()
+
+    st.markdown("</div>", unsafe_allow_html=True)
+
+# ─────────────────────────────────────────────
+# DAILY CHECK-IN
+# ─────────────────────────────────────────────
+st.markdown("""
+<div class="check-card">
+  <div class="check-title">Günlük Kontrol</div>
+  <div class="check-sub">Bugün kompostu havalandırdın mı?</div>
+</div>
+""", unsafe_allow_html=True)
+
+b1, b2 = st.columns(2)
+with b1:
+    later_clicked = st.button("Daha Sonra", use_container_width=True)
+with b2:
+    done_clicked = st.button("✓ Çevirdim", use_container_width=True)
+
+if done_clicked:
+    st.session_state.care_done = True
+    st.session_state.last_turn_date = date.today()
+    st.balloons()
+    st.rerun()
+
+if later_clicked:
+    st.session_state.care_done = False
+
+if st.session_state.care_done:
+    st.markdown("""
+<div class="success-note">
+  Güzel iş! Bugünkü bakım tamamlandı. Kompostun bugün biraz daha nefes aldı.
+</div>
+""", unsafe_allow_html=True)
+else:
+    st.markdown("""
+<div class="info-note">
+  Havalandırma, ayrışmayı hızlandırır ve kötü koku riskini azaltır.
+</div>
+""", unsafe_allow_html=True)
 
 # ─────────────────────────────────────────────
 # AI RESULTS
