@@ -602,12 +602,18 @@ def safe_json_loads(text: str) -> dict:
     return json.loads(cleaned)
 
 
+def normalize_list(value, limit: int = 3) -> list[str]:
+    if value is None:
+        return []
+    if isinstance(value, str):
+        value = [value]
+    return [str(item).strip() for item in value if str(item).strip()][:limit]
+
+
 def normalize_ai_data(data: dict) -> dict:
-    issue = data.get("issue") or data.get("main_issue") or ""
-    recs = data.get("recommendations", [])
-    if isinstance(recs, str):
-        recs = [recs]
-    recs = [make_short_label(r, 5) for r in recs if str(r).strip()][:2]
+    issue = data.get("issue") or data.get("main_issue") or "Belirgin sorun yok"
+    problems = normalize_list(data.get("detected_problems") or data.get("problems"), 3)
+    recs = normalize_list(data.get("recommendations"), 3)
 
     score = data.get("health_score", 60)
     try:
@@ -616,6 +622,7 @@ def normalize_ai_data(data: dict) -> dict:
         score = 60
     score = max(0, min(100, score))
 
+    current_status = str(data.get("current_status") or "Kompost genel olarak izlenebilir durumda; bakım adımlarına göre süreç iyileştirilebilir.").strip()
     coach_note = data.get("coach_note") or data.get("coach_message") or ""
     if not coach_note:
         coach_note = "Kompostunu izlemeye devam et; küçük bakım adımları süreci hızlandırır."
@@ -625,8 +632,10 @@ def normalize_ai_data(data: dict) -> dict:
         "moisture": data.get("moisture", "Belirsiz"),
         "balance": data.get("balance", "Belirsiz"),
         "ready_in": data.get("ready_in", "3-6 ay"),
-        "issue": make_short_label(issue, 5) or "Belirgin sorun yok",
-        "recommendations": recs or ["Havalandırmayı sürdür"],
+        "current_status": current_status,
+        "issue": str(issue).strip() or "Belirgin sorun yok",
+        "detected_problems": problems or [str(issue).strip() or "Belirgin sorun yok"],
+        "recommendations": recs or ["Kompostu nazikçe karıştır ve hava almasını sağla."],
         "coach_note": str(coach_note).strip(),
     }
 
@@ -754,7 +763,9 @@ Required JSON:
   "moisture": "",
   "balance": "",
   "ready_in": "",
+  "current_status": "",
   "issue": "",
+  "detected_problems": [],
   "recommendations": [],
   "coach_note": ""
 }}
@@ -775,10 +786,13 @@ Rules:
 - moisture: one of "Kuru", "Optimal", "Islak"
 - balance: one of "Karbon Fazla", "Dengeli", "Azot Fazla"
 - ready_in: short Turkish estimate, e.g. "2-3 ay"
-- issue: one short Turkish phrase, max 5 words
-- recommendations: max 2 Turkish phrases, each max 5 words
-- coach_note: one friendly Turkish sentence, max 18 words
-- Keep it simple like a compost coach.
+- current_status: 1 short Turkish sentence, max 22 words. Explain what the compost currently looks like.
+- issue: one main Turkish problem phrase, max 7 words
+- detected_problems: 2-3 Turkish bullet-style sentences, each max 14 words. Mention visible clues when possible: dry leaves/cardboard, green material, brown material, wetness, clumping, large pieces, air/turning.
+- recommendations: 2-3 practical Turkish actions, each max 13 words. Be specific, e.g. "Kuru yaprak veya karton ekle", "Yeşil atık oranını artır", "Büyük parçaları küçült".
+- coach_note: one friendly Turkish sentence, max 20 words
+- Do not be too long, but be more informative than one-word labels.
+- If the image is unclear, say what can still be checked manually.
 """
     response = model.generate_content([prompt, image])
     return normalize_ai_data(safe_json_loads(response.text))
@@ -957,7 +971,9 @@ def results_dialog():
     progress, _ = parse_months(data.get("ready_in", "4 ay"))
     bar_pct = int(progress * 100)
     issue = data.get("issue", "Belirgin sorun yok")
-    recs = data.get("recommendations", [])[:2]
+    current_status = data.get("current_status", "Kompost genel olarak izlenebilir durumda.")
+    problems = data.get("detected_problems", [issue])[:3]
+    recs = data.get("recommendations", [])[:3]
 
     st.markdown(
         f"""
@@ -1016,24 +1032,36 @@ def results_dialog():
         unsafe_allow_html=True,
     )
 
-    tab1, tab2, tab3 = st.tabs(["Dikkat", "Tavsiye", "Fotoğraf"])
+    tab1, tab2, tab3, tab4 = st.tabs(["Durum", "Problem", "Öneri", "Fotoğraf"])
     with tab1:
         st.markdown(
             f"""
 <div class="sheet-card">
-  <div class="sheet-title">Dikkat Edilecek Nokta</div>
-  <div class="sheet-item">{tri("#E8A020")}<span>{issue}</span></div>
+  <div class="sheet-title">Mevcut Durum</div>
+  <div class="sheet-item">{tri("#464CE6")}<span>{current_status}</span></div>
+  <div class="sheet-item">{tri("#E8A020")}<span><b>Ana nokta:</b> {issue}</span></div>
 </div>
 """,
             unsafe_allow_html=True,
         )
 
     with tab2:
+        problem_detail = "".join(
+            [f'<div class="sheet-item">{tri("#E8A020")}<span>{p}</span></div>' for p in problems]
+        )
+        st.markdown(
+            f"""
+<div class="sheet-card">
+  <div class="sheet-title">Tespit Edilen Problemler</div>
+  {problem_detail}
+</div>
+""",
+            unsafe_allow_html=True,
+        )
+
+    with tab3:
         rec_detail = "".join(
-            [
-                f'<div class="sheet-item">{tri("#7C80ED")}<span>{make_short_label(r, 5)}</span></div>'
-                for r in recs
-            ]
+            [f'<div class="sheet-item">{tri("#7C80ED")}<span>{r}</span></div>' for r in recs]
         )
         st.markdown(
             f"""
@@ -1045,7 +1073,7 @@ def results_dialog():
             unsafe_allow_html=True,
         )
 
-    with tab3:
+    with tab4:
         if image is not None:
             st.image(image, use_container_width=True)
 
