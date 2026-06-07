@@ -1082,7 +1082,21 @@ if st.session_state.analysis_ready and st.session_state.ai_data is not None:
 # WEEKLY GOALS
 goal_done_count, goal_total_count, goal_ratio = goal_completion(goals)
 
+st.markdown("""
+<style>
+div[data-testid="stVerticalBlockBorderWrapper"]:has(.weekly-goals-anchor) {
+    background: #E8E8FC;
+    border: 1.5px solid #B2B4F4 !important;
+    border-radius: 24px;
+}
+</style>
+""", unsafe_allow_html=True)
+
 with st.container(border=True):
+    st.markdown(
+        '<div class="weekly-goals-anchor"></div>',
+        unsafe_allow_html=True
+    )
 
     st.markdown(
         f"""
