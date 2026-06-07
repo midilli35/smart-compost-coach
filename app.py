@@ -64,7 +64,6 @@ header[data-testid="stHeader"] { display: none !important; }
 footer { display: none !important; }
 .stAlert { border-radius: 16px !important; }
 
-/* Dialog styling */
 div[data-testid="stDialog"] div[role="dialog"] {
   border-radius: 28px !important;
   border: 2px solid var(--mist) !important;
@@ -82,7 +81,6 @@ div[data-testid="stDialog"] h2 {
   letter-spacing: -0.03em !important;
 }
 
-/* Buttons */
 div[data-testid="stButton"] > button,
 div[data-testid="stFormSubmitButton"] > button {
   width: 100% !important;
@@ -111,7 +109,6 @@ div[data-testid="stFormSubmitButton"] > button[kind="primary"] {
   border-color: var(--orange) !important;
 }
 
-/* Equal pill buttons */
 div[data-testid="stHorizontalBlock"] div[data-testid="stButton"] > button {
   height: 44px !important;
   min-height: 44px !important;
@@ -126,7 +123,6 @@ div[data-testid="stHorizontalBlock"] div[data-testid="stButton"] > button {
   justify-content: center !important;
 }
 
-/* Upload */
 .stFileUploader [data-testid="stFileUploaderDropzone"] {
   background: #FFFDF7 !important;
   border: 1.5px dashed #C8B88A !important;
@@ -135,7 +131,6 @@ div[data-testid="stHorizontalBlock"] div[data-testid="stButton"] > button {
   padding: 12px !important;
 }
 
-/* Hero */
 .hero-card {
   background: linear-gradient(140deg, var(--cream) 0%, var(--mustard) 100%);
   border-radius: 26px;
@@ -172,7 +167,6 @@ div[data-testid="stHorizontalBlock"] div[data-testid="stButton"] > button {
   z-index: 1;
 }
 
-/* Cards */
 .card {
   background: white;
   border-radius: 22px;
@@ -213,7 +207,6 @@ div[data-testid="stHorizontalBlock"] div[data-testid="stButton"] > button {
   flex-shrink: 0;
 }
 
-/* My Compost */
 .compost-summary {
   display:grid;
   grid-template-columns: 1.15fr .85fr;
@@ -258,7 +251,6 @@ div[data-testid="stHorizontalBlock"] div[data-testid="stButton"] > button {
   margin-top: 6px;
 }
 
-/* Journey */
 .journey-row {
   display: flex;
   justify-content: space-between;
@@ -283,44 +275,123 @@ div[data-testid="stHorizontalBlock"] div[data-testid="stButton"] > button {
   transition: width 1s ease;
 }
 
-/* Check-in */
-.check-card {
+.history-card {
   background: #FFFDF7;
   border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 14px;
+  margin-top: 14px;
+}
+
+.history-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 8px;
+}
+
+.history-title {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--dark);
+}
+
+.history-note {
+  font-size: 10px;
+  color: var(--light);
+  font-weight: 700;
+}
+
+.sparkline-svg {
+  width: 100%;
+  height: 54px;
+  display: block;
+}
+
+.goal-card {
+  background: #FFFDF7;
+  border: 1px solid #F2E2B8;
   border-radius: 22px;
   padding: 18px;
   margin-bottom: 14px;
   box-shadow: 0 8px 24px rgba(0,0,0,0.035);
 }
 
-.check-title { font-size: 17px; font-weight: 800; color: var(--dark); margin-bottom: 4px; letter-spacing: -0.02em; }
-.check-sub { font-size: 12px; color: var(--mid); margin-bottom: 12px; }
+.goal-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 10px;
+}
 
-.success-note {
+.goal-title {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--dark);
+}
+
+.goal-progress {
+  font-size: 11px;
+  color: var(--royal);
+  font-weight: 800;
+}
+
+.goal-sub {
+  font-size: 12px;
+  color: var(--mid);
+  margin-bottom: 10px;
+  line-height: 1.45;
+}
+
+.completed-note {
   background: var(--mist);
   border: 1px solid #DADCFB;
   color: var(--royal);
   border-radius: 18px;
-  padding: 14px 16px;
+  padding: 12px 14px;
   font-size: 13px;
+  font-weight: 800;
+  margin-top: 10px;
+}
+
+.analysis-ready {
+  background: #F0F1FF;
+  border: 1px solid #DADCFB;
+  color: var(--royal);
+  border-radius: 20px;
+  padding: 15px 16px;
+  margin-bottom: 14px;
+  font-size: 13px;
+  font-weight: 800;
+  box-shadow: 4px 4px 0 rgba(178,180,244,0.35);
+}
+
+.coach-card {
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  padding: 18px;
+  margin-bottom: 14px;
+  box-shadow: 0 8px 26px rgba(70,76,230,0.045);
+}
+
+.coach-label {
+  font-size: 10px;
+  color: var(--light);
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  font-weight: 800;
+  margin-bottom: 7px;
+}
+
+.coach-text {
+  font-size: 14px;
+  color: var(--dark);
+  line-height: 1.45;
   font-weight: 700;
-  margin-top: 10px;
-  margin-bottom: 14px;
-  box-shadow: 4px 4px 0 rgba(178,180,244,0.45);
 }
 
-.info-note {
-  background: #FFF7E6;
-  border: 1px solid #F2E2B8;
-  color: #7A5E20;
-  border-radius: 18px;
-  padding: 14px 16px;
-  font-size: 13px;
-  margin-top: 10px;
-  margin-bottom: 14px;
-}
-
-/* AI result cards */
 .health-card {
   background: var(--mustard);
   border-radius: 24px;
@@ -387,161 +458,24 @@ div[data-testid="stHorizontalBlock"] div[data-testid="stButton"] > button {
   border-radius: 99px; transition: width 1.2s cubic-bezier(0.4,0,0.2,1);
 }
 
-.panels-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
-
-.panel-card {
-  background: white; border-radius: 18px; border: 1px solid var(--line);
-  overflow: hidden; box-shadow: 0 10px 26px rgba(70,76,230,0.045);
-}
-
-.panel-header { padding: 12px 14px 10px; display: flex; align-items: center; gap: 8px; }
-.panel-header.problems { border-bottom: 2px solid var(--cream); }
-.panel-header.recs { border-bottom: 2px solid var(--mist); }
-.panel-title { font-size: 13px; font-weight: 800; color: var(--dark); }
-
-.panel-preview {
-  padding: 10px 14px 14px;
-  font-size: 12px;
-  color: var(--mid);
-  line-height: 1.55;
-}
-
-.panel-item {
-  display: flex;
-  gap: 7px;
-  margin-bottom: 6px;
-  align-items: flex-start;
-}
-
-.bullet-tri {
-  flex-shrink:0;
-  margin-top:5px;
-  width:0; height:0;
-  border-top:5px solid transparent;
-  border-bottom:5px solid transparent;
-  border-left:8px solid;
-}
-
 .sheet-card {
   background: white;
-  border-radius: 26px 26px 18px 18px;
+  border-radius: 22px;
   border: 2px solid var(--mist);
   padding: 18px 18px 16px;
-  margin: 14px 0;
-  box-shadow: 0 -6px 0 rgba(178,180,244,0.35), 0 18px 38px rgba(70,76,230,0.10);
+  margin: 10px 0 14px;
+  box-shadow: 0 12px 30px rgba(70,76,230,0.09);
 }
 
-.sheet-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
-.sheet-title { font-size: 18px; font-weight: 800; color: var(--royal); letter-spacing: -0.03em; }
+.sheet-title { font-size: 18px; font-weight: 800; color: var(--royal); letter-spacing: -0.03em; margin-bottom: 12px; }
 .sheet-item { display:flex; gap:10px; margin-bottom:10px; align-items:flex-start; font-size:13px; color:var(--mid); line-height:1.5; }
-
-/* V18 additions */
-.history-card {
-  background: #FFFDF7;
-  border: 1px solid var(--line);
-  border-radius: 18px;
-  padding: 14px;
-  margin-top: 14px;
-}
-
-.history-head {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  margin-bottom: 8px;
-}
-
-.history-title {
-  font-size: 13px;
-  font-weight: 800;
-  color: var(--dark);
-}
-
-.history-note {
-  font-size: 10px;
-  color: var(--light);
-  font-weight: 700;
-}
-
-.sparkline {
-  display: flex;
-  align-items: end;
-  gap: 5px;
-  height: 38px;
-  margin-top: 8px;
-}
-
-.sparkbar {
-  flex: 1;
-  min-width: 10px;
-  border-radius: 999px 999px 4px 4px;
-  background: linear-gradient(180deg, var(--peri), var(--royal));
-  opacity: .9;
-}
-
-.coach-card {
-  background: white;
-  border: 1px solid var(--line);
-  border-radius: 22px;
-  padding: 18px;
-  margin-bottom: 14px;
-  box-shadow: 0 8px 26px rgba(70,76,230,0.045);
-}
-
-.coach-label {
-  font-size: 10px;
-  color: var(--light);
-  text-transform: uppercase;
-  letter-spacing: .07em;
-  font-weight: 800;
-  margin-bottom: 7px;
-}
-
-.coach-text {
-  font-size: 14px;
-  color: var(--dark);
-  line-height: 1.45;
-  font-weight: 700;
-}
-
-.goal-card {
-  background: #FFFDF7;
-  border: 1px solid #F2E2B8;
-  border-radius: 22px;
-  padding: 18px;
-  margin-bottom: 14px;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.035);
-}
-
-.goal-title {
-  font-size: 16px;
-  font-weight: 800;
-  color: var(--dark);
-  margin-bottom: 10px;
-}
-
-.goal-item {
-  font-size: 13px;
-  color: var(--mid);
-  line-height: 1.55;
-  margin-bottom: 6px;
-  font-weight: 650;
-}
-
-
-
-
-
-
 </style>
 """,
     unsafe_allow_html=True,
 )
 
 
-# ─────────────────────────────────────────────
-# SVG ILLUSTRATIONS
-# ─────────────────────────────────────────────
+# SVG
 HERO_SVG = """
 <svg viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:44px;height:44px;margin-bottom:8px">
   <circle cx="22" cy="22" r="20" fill="#FFD580" opacity="0.5"/>
@@ -557,8 +491,6 @@ HERO_PATTERN = """
   <path d="M10 60 Q30 40 50 60 Q70 80 90 60" stroke="#7A5E20" stroke-width="1.2" fill="none"/>
   <circle cx="110" cy="40" r="6" stroke="#7A5E20" stroke-width="1" fill="none"/>
   <path d="M50 100 Q70 80 90 100 Q110 120 130 100" stroke="#7A5E20" stroke-width="1" fill="none"/>
-  <circle cx="30" cy="130" r="14" stroke="#7A5E20" stroke-width="1.2" fill="none"/>
-  <circle cx="100" cy="130" r="8" stroke="#7A5E20" stroke-width="1" fill="none"/>
 </svg>"""
 
 SPROUT_SVG = """
@@ -581,21 +513,7 @@ BALANCE_SVG = """
   <path d="M2 22 L24 22" stroke="#ccc" stroke-width="1"/>
 </svg>"""
 
-WARNING_SVG = """<svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:16px;height:16px;flex-shrink:0">
-  <circle cx="8" cy="8" r="6.5" stroke="#E8A020" stroke-width="1.3"/>
-  <path d="M8 5 L8 9" stroke="#E8A020" stroke-width="1.5" stroke-linecap="round"/>
-  <circle cx="8" cy="11.5" r="1" fill="#E8A020"/>
-</svg>"""
 
-CHECK_SVG = """<svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:16px;height:16px;flex-shrink:0">
-  <circle cx="8" cy="8" r="6.5" stroke="#7C80ED" stroke-width="1.3"/>
-  <path d="M5 8 L7 10 L11 6" stroke="#7C80ED" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-</svg>"""
-
-
-# ─────────────────────────────────────────────
-# HELPERS
-# ─────────────────────────────────────────────
 def score_label(score: int) -> str:
     if score >= 80:
         return "İyi durumda"
@@ -647,48 +565,6 @@ def last_turn_message(days_since_turn: int) -> str:
     return f"{days_since_turn} gün önce"
 
 
-def journey_from_age(
-    age_days: int,
-    compost_type: str,
-    health_score: int | None = None,
-    days_since_turn: int | None = None,
-) -> tuple[str, int]:
-    """Compost Journey = age progress + AI health + care rhythm.
-
-    This avoids showing a poorly maintained compost as mature only because time passed.
-    """
-    total_days = 90 if "Sıcak" in compost_type else 180
-    age_pct = max(8, min(95, int((age_days / total_days) * 100)))
-
-    if days_since_turn is None:
-        care_score = 70
-    else:
-        interval = turning_interval_days(compost_type)
-        if days_since_turn <= interval:
-            care_score = 90
-        elif days_since_turn <= interval + 4:
-            care_score = 65
-        else:
-            care_score = 40
-
-    if health_score is None:
-        health_score = 70
-
-    # 60% age + 25% AI health + 15% care rhythm
-    pct = int((age_pct * 0.60) + (health_score * 0.25) + (care_score * 0.15))
-    pct = max(8, min(95, pct))
-
-    if pct < 25:
-        stage = "Başlangıç"
-    elif pct < 65:
-        stage = "Aktif"
-    elif pct < 90:
-        stage = "Olgunlaşma"
-    else:
-        stage = "Hazır"
-    return stage, pct
-
-
 def make_short_label(text: str, max_words: int = 4) -> str:
     words = re.sub(r"[.!?]", "", str(text)).split()
     return " ".join(words[:max_words])
@@ -731,13 +607,11 @@ def normalize_ai_data(data: dict) -> dict:
     }
 
 
-def make_weekly_goals(ai_data: dict | None, days_since_turn: int, compost_type: str) -> list[str]:
-    """Rule-based weekly goals using Gemini's diagnosis, not Gemini-generated goals."""
+def make_weekly_goals(ai_data: dict | None, days_until_turn: int, compost_type: str) -> list[str]:
     goals = []
-    interval = turning_interval_days(compost_type)
 
-    if days_since_turn >= interval:
-        goals.append("Kompostu bir kez çevir")
+    if days_until_turn <= 3:
+        goals.append("Kompostu çevir")
 
     if ai_data:
         moisture = ai_data.get("moisture", "")
@@ -764,7 +638,6 @@ def make_weekly_goals(ai_data: dict | None, days_since_turn: int, compost_type: 
         goals.append("İlk fotoğraf analizini yap")
         goals.append("Bakım ritmini kaydet")
 
-    # Deduplicate and keep compact.
     unique = []
     for goal in goals:
         if goal not in unique:
@@ -772,18 +645,75 @@ def make_weekly_goals(ai_data: dict | None, days_since_turn: int, compost_type: 
     return unique[:3]
 
 
+def goals_signature(goals: list[str]) -> str:
+    return "|".join(goals)
+
+
+def ensure_goal_state(goals: list[str]) -> None:
+    sig = goals_signature(goals)
+    if st.session_state.get("goal_signature") != sig:
+        st.session_state.goal_signature = sig
+        st.session_state.goal_done = {goal: False for goal in goals}
+        st.session_state.goal_balloons_shown = False
+    else:
+        for goal in goals:
+            st.session_state.goal_done.setdefault(goal, False)
+
+
+def goal_completion(goals: list[str]) -> tuple[int, int, float]:
+    done = sum(1 for goal in goals if st.session_state.goal_done.get(goal, False))
+    total = max(1, len(goals))
+    return done, len(goals), done / total
+
+
+def journey_progress(age_days: int, compost_type: str, health_score: int | None, goal_completion_ratio: float) -> tuple[str, int]:
+    total_days = 90 if "Sıcak" in compost_type else 180
+    age_pct = max(8, min(95, int((age_days / total_days) * 100)))
+    if health_score is None:
+        health_score = 70
+    goal_score = int(goal_completion_ratio * 100)
+    pct = int((age_pct * 0.50) + (health_score * 0.30) + (goal_score * 0.20))
+    pct = max(8, min(95, pct))
+
+    if pct < 25:
+        stage = "Başlangıç"
+    elif pct < 65:
+        stage = "Aktif"
+    elif pct < 90:
+        stage = "Olgunlaşma"
+    else:
+        stage = "Hazır"
+    return stage, pct
+
 
 def sparkline_html(history: list[dict]) -> str:
     if not history:
         return '<div class="history-note">Henüz analiz yok</div>'
 
-    recent = history[-6:]
-    bars = []
-    for item in recent:
-        score = int(item.get("score", 0))
-        height = max(10, min(38, int(score * 0.38)))
-        bars.append(f'<div class="sparkbar" title="{score}/100" style="height:{height}px"></div>')
-    return '<div class="sparkline">' + "".join(bars) + "</div>"
+    values = [int(item.get("score", 0)) for item in history[-6:]]
+    if len(values) == 1:
+        values = values * 2
+
+    width, height = 300, 54
+    pad_x, pad_y = 8, 8
+    step = (width - 2 * pad_x) / (len(values) - 1)
+    points = []
+    for i, score in enumerate(values):
+        x = pad_x + i * step
+        y = height - pad_y - (score / 100) * (height - 2 * pad_y)
+        points.append((x, y))
+
+    polyline = " ".join([f"{x:.1f},{y:.1f}" for x, y in points])
+    circles = "".join([f'<circle cx="{x:.1f}" cy="{y:.1f}" r="3.5" fill="#464CE6"/>' for x, y in points])
+    last = values[-1]
+
+    return f"""
+<svg class="sparkline-svg" viewBox="0 0 {width} {height}" preserveAspectRatio="none">
+  <line x1="{pad_x}" y1="{height-pad_y}" x2="{width-pad_x}" y2="{height-pad_y}" stroke="#E8E8FC" stroke-width="2"/>
+  <polyline points="{polyline}" fill="none" stroke="#7C80ED" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  {circles}
+  <text x="{width-pad_x}" y="13" text-anchor="end" fill="#464CE6" font-size="10" font-weight="800">{last}/100</text>
+</svg>"""
 
 
 def analyze_compost_image(image: Image.Image, compost_type: str, start_date: date, age_days: int,
@@ -832,15 +762,9 @@ Rules:
     return normalize_ai_data(safe_json_loads(response.text))
 
 
-# ─────────────────────────────────────────────
-# SESSION STATE
-# ─────────────────────────────────────────────
 today = date.today()
-
 defaults = {
     "sheet": None,
-    "care_done": False,
-    "show_balloons": False,
     "compost_type": "Ev tipi / soğuk kompost",
     "start_date": today - timedelta(days=22),
     "last_turn_date": today - timedelta(days=3),
@@ -848,16 +772,16 @@ defaults = {
     "ai_data": None,
     "ai_image": None,
     "history": [],
+    "goal_done": {},
+    "goal_signature": "",
+    "goal_balloons_shown": False,
+    "analysis_ready": False,
 }
-
 for key, value in defaults.items():
     if key not in st.session_state:
         st.session_state[key] = value
 
 
-# ─────────────────────────────────────────────
-# RULE-BASED VALUES
-# ─────────────────────────────────────────────
 compost_type = st.session_state.compost_type
 start_date = st.session_state.start_date
 last_turn_date = st.session_state.last_turn_date
@@ -871,38 +795,32 @@ next_turn_date = last_turn_date + timedelta(days=interval)
 days_until_turn = (next_turn_date - date.today()).days
 turn_label = turning_message(days_until_turn)
 
+goals = make_weekly_goals(st.session_state.ai_data, days_until_turn, compost_type)
+ensure_goal_state(goals)
+goal_done_count, goal_total_count, goal_ratio = goal_completion(goals)
+
 health_for_journey = None
 if st.session_state.ai_data is not None:
     health_for_journey = st.session_state.ai_data.get("health_score")
 
-rule_stage, rule_journey_pct = journey_from_age(age_days, compost_type, health_for_journey, days_since_turn)
+rule_stage, rule_journey_pct = journey_progress(age_days, compost_type, health_for_journey, goal_ratio)
 
 
-# ─────────────────────────────────────────────
-# DIALOGS
-# ─────────────────────────────────────────────
 @st.dialog("📷 Kompostunu Analiz Et")
 def analysis_dialog():
     st.caption("Fotoğraf yükle, Smart Compost Coach kısa bir bakım önerisi versin.")
 
-    uploaded_file = st.file_uploader(
-        "Fotoğraf yükle",
-        type=["jpg", "jpeg", "png"],
-        label_visibility="visible",
-        key="analysis_uploader",
-    )
+    uploaded_file = st.file_uploader("Fotoğraf yükle", type=["jpg", "jpeg", "png"], key="analysis_uploader")
 
     if uploaded_file is not None:
         image_preview = Image.open(uploaded_file)
         st.image(image_preview, caption="Yüklenen fotoğraf", use_container_width=True)
 
     col1, col2 = st.columns([3, 1])
-
     with col1:
         analyze_clicked = st.button("🔍 Analiz Et", type="primary", use_container_width=True)
-
     with col2:
-        close_clicked = st.button("✕ Kapat", use_container_width=True)
+        close_clicked = st.button("Kapat", use_container_width=True)
 
     if close_clicked:
         st.rerun()
@@ -927,8 +845,10 @@ def analysis_dialog():
                     days_until_turn=days_until_turn,
                     material_amount=material_amount,
                 )
+
                 st.session_state.ai_data = data
                 st.session_state.ai_image = image.copy()
+                st.session_state.analysis_ready = True
 
                 st.session_state.history.append({
                     "date": date.today().strftime("%d.%m"),
@@ -938,7 +858,10 @@ def analysis_dialog():
                 })
                 st.session_state.history = st.session_state.history[-8:]
 
-                st.session_state.sheet = None
+                new_goals = make_weekly_goals(data, days_until_turn, compost_type)
+                st.session_state.goal_signature = ""
+                ensure_goal_state(new_goals)
+
                 st.rerun()
             except Exception as e:
                 st.error(f"Analiz sırasında hata oluştu: {e}")
@@ -961,136 +884,37 @@ def edit_compost_dialog():
         with f2:
             new_turn = st.date_input("Son çevirme tarihi", value=st.session_state.last_turn_date)
 
-        new_amount = st.number_input(
-            "Yaklaşık materyal miktarı (kg)",
-            min_value=0.0,
-            value=float(st.session_state.material_amount),
-            step=0.5,
-        )
+        new_amount = st.number_input("Yaklaşık materyal miktarı (kg)", min_value=0.0, value=float(st.session_state.material_amount), step=0.5)
 
         ef1, ef2 = st.columns([3, 1])
         with ef1:
             saved = st.form_submit_button("✓ Kaydet", type="primary", use_container_width=True)
         with ef2:
-            cancel = st.form_submit_button("✕ İptal", use_container_width=True)
+            cancel = st.form_submit_button("İptal", use_container_width=True)
 
         if saved:
             st.session_state.compost_type = new_type
             st.session_state.start_date = new_start
             st.session_state.last_turn_date = new_turn
             st.session_state.material_amount = new_amount
+            st.session_state.goal_signature = ""
             st.rerun()
 
         if cancel:
             st.rerun()
 
 
-# ─────────────────────────────────────────────
-# HERO
-# ─────────────────────────────────────────────
-st.markdown(
-    f"""
-<div class="hero-card">
-  {HERO_PATTERN}
-  <div style="position:relative;z-index:1">
-    {HERO_SVG}
-    <div class="hero-title">Smart Compost<br>Coach</div>
-    <div class="hero-sub">Kompostunu takip et, fotoğrafla analiz et.</div>
-  </div>
-</div>
-""",
-    unsafe_allow_html=True,
-)
-
-
-# ─────────────────────────────────────────────
-# MY COMPOST DASHBOARD
-# ─────────────────────────────────────────────
-st.markdown(
-    f"""
-<div class="card">
-  <div class="card-head">
-    <div>
-      <div class="card-title">My Compost</div>
-      <div class="card-sub">Kompost bilgilerini kaydet; takip ve AI analizi buna göre güncellensin.</div>
-    </div>
-    <div class="icon-chip">{SPROUT_SVG}</div>
-  </div>
-
-  <div class="compost-summary">
-    <div class="summary-main">
-      <div class="summary-label">Kompost Yaşı</div>
-      <div class="summary-value">{age_days} gün</div>
-      <div class="summary-note">{rule_stage} dönemi</div>
-    </div>
-    <div class="summary-side">
-      <div class="summary-label">Sonraki Çevirme</div>
-      <div class="summary-value" style="font-size:22px;letter-spacing:-.04em;">{turn_label}</div>
-      <div class="summary-note">Son çevirme: {last_turn_text}</div>
-    </div>
-  </div>
-
-  <div class="card-title" style="font-size:15px;margin-top:16px;">Compost Journey</div>
-  <div class="journey-row">
-    <span class="journey-step {'active' if rule_stage == 'Başlangıç' else ''}">Başlangıç</span>
-    <span class="journey-step {'active' if rule_stage == 'Aktif' else ''}">Aktif</span>
-    <span class="journey-step {'active' if rule_stage == 'Olgunlaşma' else ''}">Olgunlaşma</span>
-    <span class="journey-step {'active' if rule_stage == 'Hazır' else ''}">Hazır</span>
-  </div>
-  <div class="journey-track">
-    <div class="journey-fill" style="width:{rule_journey_pct}%"></div>
-  </div>
-
-  <div class="history-card">
-    <div class="history-head">
-      <div class="history-title">Health History</div>
-      <div class="history-note">Son analizler</div>
-    </div>
-    {sparkline_html(st.session_state.history)}
-  </div>
-</div>
-""",
-    unsafe_allow_html=True,
-)
-
-p1, p2, p3 = st.columns([1, 1, 1])
-with p1:
-    if st.button(compost_type, use_container_width=True, key="edit_type_pill"):
-        edit_compost_dialog()
-with p2:
-    if st.button(f"Yaklaşık {material_amount:.1f} kg", use_container_width=True, key="edit_amount_pill"):
-        edit_compost_dialog()
-with p3:
-    if st.button(f"Başlangıç: {start_date.strftime('%d.%m.%Y')}", use_container_width=True, key="edit_start_pill"):
-        edit_compost_dialog()
-
-if st.button("📷 Kompostunu Analiz Et", type="primary", use_container_width=True, key="open_analysis_main"):
-    analysis_dialog()
-
-
-
-# ─────────────────────────────────────────────
-# WEEKLY GOAL — rule-based from AI output
-# ─────────────────────────────────────────────
-goals = make_weekly_goals(st.session_state.ai_data, days_since_turn, compost_type)
-goal_items = "".join([f'<div class="goal-item">☐ {goal}</div>' for goal in goals])
-st.markdown(
-    f"""
-<div class="goal-card">
-  <div class="goal-title">Bu Haftanın Hedefi</div>
-  {goal_items}
-</div>
-""",
-    unsafe_allow_html=True,
-)
-
-
-# ─────────────────────────────────────────────
-# AI RESULTS
-# ─────────────────────────────────────────────
-if st.session_state.ai_data is not None:
+@st.dialog("📊 Analiz Sonuçları")
+def results_dialog():
     data = st.session_state.ai_data
     image = st.session_state.ai_image
+
+    if data is None:
+        st.info("Henüz analiz sonucu yok.")
+        if st.button("Kapat"):
+            st.rerun()
+        return
+
     score = data["health_score"]
     progress, _ = parse_months(data.get("ready_in", "4 ay"))
     bar_pct = int(progress * 100)
@@ -1154,77 +978,171 @@ if st.session_state.ai_data is not None:
         unsafe_allow_html=True,
     )
 
-    rec_items = "".join(
-        [f'<div class="panel-item">{tri("#7C80ED")}<span>{make_short_label(r, 5)}</span></div>' for r in recs]
-    )
-
-    st.markdown(
-        f"""
-<div class="panels-row">
-  <div class="panel-card">
-    <div class="panel-header problems">
-      {WARNING_SVG}
-      <span class="panel-title">Dikkat</span>
-    </div>
-    <div class="panel-preview">
-      <div class="panel-item">{tri("#E8A020")}<span>{issue}</span></div>
-    </div>
-  </div>
-
-  <div class="panel-card">
-    <div class="panel-header recs">
-      {CHECK_SVG}
-      <span class="panel-title">Bugünkü Tavsiye</span>
-    </div>
-    <div class="panel-preview">{rec_items}</div>
-  </div>
-</div>
-""",
-        unsafe_allow_html=True,
-    )
-
-    s1, s2, s3 = st.columns(3)
-    with s1:
-        if st.button("Detay", use_container_width=True):
-            st.session_state.sheet = "status"
-    with s2:
-        if st.button("Fotoğraf", use_container_width=True):
-            st.session_state.sheet = "photo"
-    with s3:
-        if st.button("Kapat", use_container_width=True):
-            st.session_state.sheet = None
-            st.rerun()
-
-    if st.session_state.sheet == "status":
-        rec_detail = "".join([f"<div class='sheet-item'>• {r}</div>" for r in recs])
+    tab1, tab2, tab3 = st.tabs(["Dikkat", "Tavsiye", "Fotoğraf"])
+    with tab1:
         st.markdown(
             f"""
 <div class="sheet-card">
-  <div class="sheet-head"><div class="sheet-title">Kompost Durumu</div></div>
-  <div class="sheet-item">Nem: <b>{data["moisture"]}</b></div>
-  <div class="sheet-item">Denge: <b>{data["balance"]}</b></div>
-  <div class="sheet-item">Dikkat: <b>{issue}</b></div>
-  <div class="sheet-item">Öneriler:</div>
+  <div class="sheet-title">Dikkat Edilecek Nokta</div>
+  <div class="sheet-item">{tri("#E8A020")}<span>{issue}</span></div>
+</div>
+""",
+            unsafe_allow_html=True,
+        )
+
+    with tab2:
+        rec_detail = "".join(
+            [f'<div class="sheet-item">{tri("#7C80ED")}<span>{make_short_label(r, 5)}</span></div>' for r in recs]
+        )
+        st.markdown(
+            f"""
+<div class="sheet-card">
+  <div class="sheet-title">Bugünkü Tavsiyeler</div>
   {rec_detail}
 </div>
 """,
             unsafe_allow_html=True,
         )
 
-    elif st.session_state.sheet == "photo":
-        st.markdown(
-            """
-<div class="sheet-card">
-  <div class="sheet-head"><div class="sheet-title">Yüklenen Fotoğraf</div></div>
-</div>
-""",
-            unsafe_allow_html=True,
-        )
+    with tab3:
         if image is not None:
             st.image(image, use_container_width=True)
 
+    if st.button("Kapat", use_container_width=True):
+        st.rerun()
 
-# ─────────────────────────────────────────────
-# VERSION NOTE
-# ─────────────────────────────────────────────
-st.caption("Smart Compost Coach prototype · v19 clean goals version")
+
+# HERO
+st.markdown(
+    f"""
+<div class="hero-card">
+  {HERO_PATTERN}
+  <div style="position:relative;z-index:1">
+    {HERO_SVG}
+    <div class="hero-title">Smart Compost<br>Coach</div>
+    <div class="hero-sub">Kompostunu takip et, fotoğrafla analiz et.</div>
+  </div>
+</div>
+""",
+    unsafe_allow_html=True,
+)
+
+
+# MY COMPOST
+st.markdown(
+    f"""
+<div class="card">
+  <div class="card-head">
+    <div>
+      <div class="card-title">My Compost</div>
+      <div class="card-sub">Kompost bilgilerini kaydet; takip ve AI analizi buna göre güncellensin.</div>
+    </div>
+    <div class="icon-chip">{SPROUT_SVG}</div>
+  </div>
+
+  <div class="compost-summary">
+    <div class="summary-main">
+      <div class="summary-label">Kompost Yaşı</div>
+      <div class="summary-value">{age_days} gün</div>
+      <div class="summary-note">{rule_stage} dönemi</div>
+    </div>
+    <div class="summary-side">
+      <div class="summary-label">Sonraki Çevirme</div>
+      <div class="summary-value" style="font-size:22px;letter-spacing:-.04em;">{turn_label}</div>
+      <div class="summary-note">Son çevirme: {last_turn_text}</div>
+    </div>
+  </div>
+
+  <div class="card-title" style="font-size:15px;margin-top:16px;">Compost Journey</div>
+  <div class="journey-row">
+    <span class="journey-step {'active' if rule_stage == 'Başlangıç' else ''}">Başlangıç</span>
+    <span class="journey-step {'active' if rule_stage == 'Aktif' else ''}">Aktif</span>
+    <span class="journey-step {'active' if rule_stage == 'Olgunlaşma' else ''}">Olgunlaşma</span>
+    <span class="journey-step {'active' if rule_stage == 'Hazır' else ''}">Hazır</span>
+  </div>
+  <div class="journey-track">
+    <div class="journey-fill" style="width:{rule_journey_pct}%"></div>
+  </div>
+
+  <div class="history-card">
+    <div class="history-head">
+      <div class="history-title">Health History</div>
+      <div class="history-note">Son analizler</div>
+    </div>
+    {sparkline_html(st.session_state.history)}
+  </div>
+</div>
+""",
+    unsafe_allow_html=True,
+)
+
+p1, p2, p3 = st.columns([1, 1, 1])
+with p1:
+    if st.button(compost_type, use_container_width=True, key="edit_type_pill"):
+        edit_compost_dialog()
+with p2:
+    if st.button(f"Yaklaşık {material_amount:.1f} kg", use_container_width=True, key="edit_amount_pill"):
+        edit_compost_dialog()
+with p3:
+    if st.button(f"Başlangıç: {start_date.strftime('%d.%m.%Y')}", use_container_width=True, key="edit_start_pill"):
+        edit_compost_dialog()
+
+if st.button("📷 Kompostunu Analiz Et", type="primary", use_container_width=True, key="open_analysis_main"):
+    analysis_dialog()
+
+if st.session_state.analysis_ready and st.session_state.ai_data is not None:
+    st.markdown(
+        """
+<div class="analysis-ready">
+  Analiz tamamlandı. Sonuçları ayrı panelde inceleyebilirsin.
+</div>
+""",
+        unsafe_allow_html=True,
+    )
+    if st.button("📊 Analiz Sonuçlarını İncele", use_container_width=True, key="open_results"):
+        results_dialog()
+
+
+# WEEKLY GOALS
+goal_done_count, goal_total_count, goal_ratio = goal_completion(goals)
+st.markdown(
+    f"""
+<div class="goal-card">
+  <div class="goal-title-row">
+    <div class="goal-title">Bu Haftanın Hedefleri</div>
+    <div class="goal-progress">{goal_done_count}/{goal_total_count} tamamlandı</div>
+  </div>
+  <div class="goal-sub">Hedefler AI analizi ve kompost bilgilerine göre güncellenir.</div>
+""",
+    unsafe_allow_html=True,
+)
+
+for idx, goal in enumerate(goals):
+    key = f"goal_{idx}_{abs(hash(goal))}"
+    current = bool(st.session_state.goal_done.get(goal, False))
+    checked = st.checkbox(goal, value=current, key=key)
+
+    if checked != current:
+        st.session_state.goal_done[goal] = checked
+        if checked and goal == "Kompostu çevir":
+            st.session_state.last_turn_date = date.today()
+        st.rerun()
+
+goal_done_count, goal_total_count, goal_ratio = goal_completion(goals)
+
+if goal_total_count > 0 and goal_done_count == goal_total_count:
+    st.markdown(
+        """
+<div class="completed-note">
+  Harika! Bu haftaki bakım hedeflerinin tamamı tamamlandı 🌱
+</div>
+""",
+        unsafe_allow_html=True,
+    )
+    if not st.session_state.goal_balloons_shown:
+        st.balloons()
+        st.session_state.goal_balloons_shown = True
+
+st.markdown("</div>", unsafe_allow_html=True)
+
+st.caption("Smart Compost Coach prototype · v20 interactive goals + results panel")
