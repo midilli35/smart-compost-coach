@@ -45,7 +45,7 @@ st.markdown(
   --dark:      #242428;
   --mid:       #5A5A66;
   --light:     #8A8A98;
-  --page-bg:   #F7F4EE;
+  --page-bg:   #FFFFFF;
   --line:      #EDE8DC;
 }
 
@@ -281,13 +281,17 @@ div[data-testid="stHorizontalBlock"] div[data-testid="stButton"] > button {
 
 
 .goal-card {
-  background: #DBE5DA;
-  border: 1px solid #E5E5E5;
+  background: linear-gradient(
+      180deg,
+      #DBE5DA 0%,
+      #F5F8F5 100%
+  );
+  border: 1.5px solid #B8CCB6;
   border-radius: 24px;
   padding: 20px;
   margin-top: 12px;
   margin-bottom: 16px;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.05);
+  box-shadow: 0 10px 24px rgba(184,204,182,0.18);
 }
 
 .goal-title-row {
@@ -1084,7 +1088,8 @@ if st.session_state.analysis_ready and st.session_state.ai_data is not None:
 goal_done_count, goal_total_count, goal_ratio = goal_completion(goals)
 
 
-with st.container(border=True):
+with st.container():
+    st.markdown('<div class="goal-card">', unsafe_allow_html=True)
 
     st.markdown(
         f"""
