@@ -1078,46 +1078,50 @@ if st.session_state.analysis_ready and st.session_state.ai_data is not None:
         results_dialog()
 
 
+
 # WEEKLY GOALS
 goal_done_count, goal_total_count, goal_ratio = goal_completion(goals)
-st.markdown(
-    f"""
-<div class="goal-card">
-  <div class="goal-title-row">
-    <div class="goal-title">Bu Haftanın Hedefleri</div>
-    <div class="goal-progress">{goal_done_count}/{goal_total_count} tamamlandı</div>
-  </div>
-  <div class="goal-sub">Hedefler fotoğraf analizi, koku durumu ve çevirme takvimine göre güncellenir.</div>
-""",
-    unsafe_allow_html=True,
-)
 
-for idx, goal in enumerate(goals):
-    key = f"goal_{idx}_{abs(hash(goal))}"
-    current = bool(st.session_state.goal_done.get(goal, False))
-    checked = st.checkbox(goal, value=current, key=key)
+with st.container(border=True):
 
-    if checked != current:
-        st.session_state.goal_done[goal] = checked
-        if checked and goal == "Kompostu çevir":
-            st.session_state.last_turn_date = date.today()
-        st.rerun()
-
-goal_done_count, goal_total_count, goal_ratio = goal_completion(goals)
-
-if goal_total_count > 0 and goal_done_count == goal_total_count:
     st.markdown(
-        """
-<div class="completed-note">
-  Harika! Bu haftaki bakım hedeflerinin tamamı tamamlandı 🌱
+        f"""
+<div class="goal-title-row">
+  <div class="goal-title">Bu Haftanın Hedefleri</div>
+  <div class="goal-progress">{goal_done_count}/{goal_total_count} tamamlandı</div>
 </div>
 """,
         unsafe_allow_html=True,
     )
-    if not st.session_state.goal_balloons_shown:
-        st.balloons()
-        st.session_state.goal_balloons_shown = True
 
-st.markdown("</div>", unsafe_allow_html=True)
+    st.caption("AI analizi ve kompost bilgilerine göre oluşturulur.")
 
-st.caption("Smart Compost Coach prototype · v21 personalized weekly goals")
+    for idx, goal in enumerate(goals):
+        key = f"goal_{idx}_{abs(hash(goal))}"
+        current = bool(st.session_state.goal_done.get(goal, False))
+
+        checked = st.checkbox(
+            goal,
+            value=current,
+            key=key
+        )
+
+        if checked != current:
+            st.session_state.goal_done[goal] = checked
+
+            if checked and goal == "Kompostu çevir":
+                st.session_state.last_turn_date = date.today()
+
+            st.rerun()
+
+    goal_done_count, goal_total_count, goal_ratio = goal_completion(goals)
+
+    if goal_total_count > 0 and goal_done_count == goal_total_count:
+
+        st.success(
+            "Harika! Bu haftaki bakım hedeflerinin tamamı tamamlandı 🌱"
+        )
+
+        if not st.session_state.goal_balloons_shown:
+            st.balloons()
+            st.session_state.goal_balloons_shown = True
