@@ -1,139 +1,33 @@
-﻿import streamlit as st
-import google.generativeai as genai
-from PIL import Image
 import json
 import re
 from datetime import date, timedelta
 
+import streamlit as st
+from PIL import Image
+import google.generativeai as genai
+
+
 # ─────────────────────────────────────────────
 # CONFIG
 # ─────────────────────────────────────────────
-genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-
 st.set_page_config(
     page_title="Smart Compost Coach",
     page_icon="🌱",
     layout="centered",
-    initial_sidebar_state="collapsed"
+    initial_sidebar_state="collapsed",
 )
 
-# ─────────────────────────────────────────────
-# OVERLAY HELPER  — injects a true fixed overlay via parent document
-# ─────────────────────────────────────────────
-def inject_overlay_styles():
-    """Inject global overlay CSS into the parent page once."""
-    st.markdown("""
-<style>
-/* ── Overlay backdrop injected into parent document by JS ── */
-#scc-overlay-backdrop {
-  position: fixed !important;
-  inset: 0 !important;
-  z-index: 99999 !important;
-  background: rgba(18,18,38,0.55) !important;
-  backdrop-filter: blur(7px) !important;
-  -webkit-backdrop-filter: blur(7px) !important;
-  display: flex !important;
-  align-items: flex-start !important;
-  justify-content: center !important;
-  padding-top: 52px !important;
-  padding-left: 16px !important;
-  padding-right: 16px !important;
-  animation: sccFadeIn 0.18s ease !important;
-}
-@keyframes sccFadeIn { from{opacity:0} to{opacity:1} }
-#scc-overlay-backdrop .scc-modal-box {
-  background: white;
-  border-radius: 28px;
-  border: 2px solid #E8E8FC;
-  padding: 24px 20px 28px;
-  width: 100%;
-  max-width: 460px;
-  max-height: 82vh;
-  overflow-y: auto;
-  box-shadow: 0 32px 80px rgba(18,18,60,0.30), 0 0 0 1px rgba(178,180,244,0.2);
-  animation: sccSlideIn 0.22s cubic-bezier(0.34,1.4,0.64,1);
-  position: relative;
-}
-@keyframes sccSlideIn {
-  from { opacity:0; transform: translateY(20px) scale(0.96); }
-  to   { opacity:1; transform: translateY(0) scale(1); }
-}
-#scc-overlay-backdrop .scc-modal-box.edit-modal {
-  border-color: #FFE9BD;
-  box-shadow: 0 32px 80px rgba(28,20,0,0.22), 0 0 0 1px rgba(255,213,128,0.3);
-}
-#scc-overlay-backdrop .scc-modal-title {
-  font-size: 19px;
-  font-weight: 800;
-  color: #464CE6;
-  letter-spacing: -0.03em;
-  margin-bottom: 16px;
-  font-family: 'Plus Jakarta Sans', sans-serif;
-}
-#scc-overlay-backdrop .scc-upload-zone {
-  border: 1.5px dashed #C8B88A;
-  border-radius: 18px;
-  padding: 12px 14px;
-  background: #FFFDF7;
-  margin-bottom: 12px;
-  font-family: 'Plus Jakarta Sans', sans-serif;
-}
-#scc-overlay-backdrop .scc-upload-title {
-  font-size: 14px;
-  font-weight: 700;
-  color: #5A5A66;
-}
-#scc-overlay-backdrop .scc-upload-hint {
-  font-size: 11px;
-  color: #AAA;
-  margin-top: 3px;
-}
-</style>
-""", unsafe_allow_html=True)
-
-
-def show_overlay(modal_id: str, title: str, content_html: str, edit_style: bool = False):
-    """Render a fixed overlay via JS appended to parent document body."""
-    modal_class = "scc-modal-box edit-modal" if edit_style else "scc-modal-box"
-    st.markdown(f"""
-<script>
-(function(){{
-  // Remove any existing overlay
-  var old = document.getElementById('scc-overlay-backdrop');
-  if(old) old.remove();
-
-  var backdrop = document.createElement('div');
-  backdrop.id = 'scc-overlay-backdrop';
-
-  var box = document.createElement('div');
-  box.className = '{modal_class}';
-
-  var title = document.createElement('div');
-  title.className = 'scc-modal-title';
-  title.innerHTML = '{title}';
-  box.appendChild(title);
-
-  box.innerHTML += `{content_html}`;
-  backdrop.appendChild(box);
-  document.body.appendChild(backdrop);
-}})();
-</script>
-""", unsafe_allow_html=True)
-
-
-def remove_overlay():
-    st.markdown("""
-<script>
-var old = document.getElementById('scc-overlay-backdrop');
-if(old) old.remove();
-</script>
-""", unsafe_allow_html=True)
+try:
+    genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
+except Exception:
+    pass
 
 
 # ─────────────────────────────────────────────
 # CSS
 # ─────────────────────────────────────────────
-st.markdown("""
+st.markdown(
+    """
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
 <style>
@@ -147,9 +41,7 @@ st.markdown("""
   --lavender:  #B2B4F4;
   --mist:      #E8E8FC;
   --sage:      #B8CCB6;
-  --pale-sage: #DBE5DA;
   --orange:    #E8650A;
-  --orange-dk: #C8560A;
   --dark:      #242428;
   --mid:       #5A5A66;
   --light:     #8A8A98;
@@ -161,23 +53,65 @@ st.markdown("""
   background: var(--page-bg) !important;
   font-family: 'Plus Jakarta Sans', sans-serif !important;
 }
+
 .block-container {
   padding-top: 1.2rem !important;
   padding-bottom: 3rem !important;
   max-width: 540px !important;
 }
+
 header[data-testid="stHeader"] { display: none !important; }
 footer { display: none !important; }
 .stAlert { border-radius: 16px !important; }
-.stFileUploader label { display: none !important; }
 
-/* When a modal is open, blur the main content */
-.stApp.modal-open > div {
-  filter: blur(4px);
-  pointer-events: none;
+/* Dialog styling */
+div[data-testid="stDialog"] div[role="dialog"] {
+  border-radius: 28px !important;
+  border: 2px solid var(--mist) !important;
+  box-shadow: 0 32px 80px rgba(18,18,60,0.28) !important;
 }
 
-/* ── Pill buttons — all equal height ── */
+div[data-testid="stDialog"] {
+  backdrop-filter: blur(7px) !important;
+  -webkit-backdrop-filter: blur(7px) !important;
+}
+
+div[data-testid="stDialog"] h2 {
+  color: var(--royal) !important;
+  font-weight: 800 !important;
+  letter-spacing: -0.03em !important;
+}
+
+/* Buttons */
+div[data-testid="stButton"] > button,
+div[data-testid="stFormSubmitButton"] > button {
+  width: 100% !important;
+  padding: 13px 18px !important;
+  border-radius: 999px !important;
+  font-family: 'Plus Jakarta Sans', sans-serif !important;
+  font-size: 14px !important;
+  font-weight: 800 !important;
+  border: 1.5px solid var(--royal) !important;
+  color: var(--royal) !important;
+  background: white !important;
+  transition: transform 0.12s ease, box-shadow 0.12s ease !important;
+  box-shadow: none !important;
+}
+
+div[data-testid="stButton"] > button:hover,
+div[data-testid="stFormSubmitButton"] > button:hover {
+  transform: translateY(-1px) !important;
+  box-shadow: 0 8px 18px rgba(70,76,230,0.12) !important;
+}
+
+div[data-testid="stButton"] > button[kind="primary"],
+div[data-testid="stFormSubmitButton"] > button[kind="primary"] {
+  background: var(--orange) !important;
+  color: white !important;
+  border-color: var(--orange) !important;
+}
+
+/* Equal pill buttons */
 div[data-testid="stHorizontalBlock"] div[data-testid="stButton"] > button {
   height: 44px !important;
   min-height: 44px !important;
@@ -192,62 +126,13 @@ div[data-testid="stHorizontalBlock"] div[data-testid="stButton"] > button {
   justify-content: center !important;
 }
 
-/* Modal overlay — lives inside Streamlit flow but styled as fixed layer */
-.modal-backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 99998;
-  background: rgba(18, 18, 38, 0.55);
-  backdrop-filter: blur(7px);
-  -webkit-backdrop-filter: blur(7px);
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
-  padding: 52px 16px 24px;
-  animation: mbFadeIn 0.18s ease;
-}
-@keyframes mbFadeIn { from{opacity:0} to{opacity:1} }
-
-.modal-card {
-  background: white;
-  border-radius: 28px;
-  border: 2px solid var(--mist);
-  padding: 24px 20px 28px;
-  width: 100%;
-  max-width: 460px;
-  box-shadow: 0 32px 80px rgba(18,18,60,0.28), 0 0 0 1px rgba(178,180,244,0.18);
-  animation: mcSlideIn 0.22s cubic-bezier(0.34,1.4,0.64,1);
-  position: relative;
-}
-.modal-card.edit-variant {
-  border-color: var(--cream);
-  box-shadow: 0 32px 80px rgba(28,20,0,0.20), 0 0 0 1px rgba(255,213,128,0.28);
-}
-@keyframes mcSlideIn {
-  from { opacity:0; transform: translateY(18px) scale(0.96); }
-  to   { opacity:1; transform: translateY(0) scale(1); }
-}
-.modal-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 16px;
-}
-.modal-title {
-  font-size: 19px;
-  font-weight: 800;
-  color: var(--royal);
-  letter-spacing: -0.03em;
-}
-.modal-x {
-  width: 34px; height: 34px;
-  border-radius: 50%;
-  background: var(--mist);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 16px; font-weight: 800;
-  color: var(--royal);
-  cursor: pointer;
-  flex-shrink: 0;
+/* Upload */
+.stFileUploader [data-testid="stFileUploaderDropzone"] {
+  background: #FFFDF7 !important;
+  border: 1.5px dashed #C8B88A !important;
+  border-radius: 18px !important;
+  min-height: 76px !important;
+  padding: 12px !important;
 }
 
 /* Hero */
@@ -260,6 +145,7 @@ div[data-testid="stHorizontalBlock"] div[data-testid="stButton"] > button {
   overflow: hidden;
   box-shadow: 0 10px 30px rgba(232,101,10,0.08);
 }
+
 .hero-pattern {
   position: absolute;
   top: 0; right: 0;
@@ -267,6 +153,7 @@ div[data-testid="stHorizontalBlock"] div[data-testid="stButton"] > button {
   opacity: 0.16;
   pointer-events: none;
 }
+
 .hero-title {
   font-size: 30px;
   font-weight: 800;
@@ -276,6 +163,7 @@ div[data-testid="stHorizontalBlock"] div[data-testid="stButton"] > button {
   position: relative;
   z-index: 1;
 }
+
 .hero-sub {
   font-size: 13px;
   color: #666;
@@ -293,7 +181,7 @@ div[data-testid="stHorizontalBlock"] div[data-testid="stButton"] > button {
   margin-bottom: 14px;
   box-shadow: 0 8px 26px rgba(70,76,230,0.045);
 }
-.card.soft { background: #FFFDF7; }
+
 .card-title {
   font-size: 16px;
   font-weight: 800;
@@ -301,12 +189,14 @@ div[data-testid="stHorizontalBlock"] div[data-testid="stButton"] > button {
   margin-bottom: 6px;
   letter-spacing: -0.02em;
 }
+
 .card-sub {
   font-size: 12px;
   color: var(--mid);
   line-height: 1.45;
   margin-bottom: 12px;
 }
+
 .card-head {
   display:flex;
   justify-content:space-between;
@@ -314,6 +204,7 @@ div[data-testid="stHorizontalBlock"] div[data-testid="stButton"] > button {
   gap:12px;
   margin-bottom:10px;
 }
+
 .icon-chip {
   width: 42px; height: 42px;
   border-radius: 50%;
@@ -329,18 +220,21 @@ div[data-testid="stHorizontalBlock"] div[data-testid="stButton"] > button {
   gap:12px;
   margin-top:12px;
 }
+
 .summary-main {
   background: linear-gradient(140deg, #FFF2CC, #FFD580);
   border: 1px solid #F2D18C;
   border-radius: 20px;
   padding: 16px;
 }
+
 .summary-side {
   background: #F0F1FF;
   border: 1px solid #DADCFB;
   border-radius: 20px;
   padding: 16px;
 }
+
 .summary-label {
   font-size: 10px;
   color: var(--light);
@@ -348,6 +242,7 @@ div[data-testid="stHorizontalBlock"] div[data-testid="stButton"] > button {
   letter-spacing: .06em;
   font-weight: 800;
 }
+
 .summary-value {
   font-size: 30px;
   font-weight: 800;
@@ -356,22 +251,11 @@ div[data-testid="stHorizontalBlock"] div[data-testid="stButton"] > button {
   line-height: 1.05;
   margin-top: 4px;
 }
+
 .summary-note {
   font-size: 11px;
   color: var(--mid);
   margin-top: 6px;
-}
-.meta-row {
-  display:flex; flex-wrap:wrap; gap:8px; margin-top:12px;
-}
-.meta-pill {
-  background:#F8F6EF;
-  border:1px solid var(--line);
-  color:var(--mid);
-  border-radius:999px;
-  padding:7px 10px;
-  font-size:11px;
-  font-weight:700;
 }
 
 /* Journey */
@@ -382,13 +266,16 @@ div[data-testid="stHorizontalBlock"] div[data-testid="stButton"] > button {
   color: var(--light);
   margin: 12px 0 10px;
 }
+
 .journey-step.active { color: var(--royal); font-weight: 800; }
+
 .journey-track {
   height: 10px;
   background: var(--mist);
   border-radius: 999px;
   overflow: hidden;
 }
+
 .journey-fill {
   height: 100%;
   background: linear-gradient(90deg, var(--peri), var(--royal));
@@ -405,8 +292,10 @@ div[data-testid="stHorizontalBlock"] div[data-testid="stButton"] > button {
   margin-bottom: 14px;
   box-shadow: 0 8px 24px rgba(0,0,0,0.035);
 }
+
 .check-title { font-size: 17px; font-weight: 800; color: var(--dark); margin-bottom: 4px; letter-spacing: -0.02em; }
 .check-sub { font-size: 12px; color: var(--mid); margin-bottom: 12px; }
+
 .success-note {
   background: var(--mist);
   border: 1px solid #DADCFB;
@@ -419,6 +308,7 @@ div[data-testid="stHorizontalBlock"] div[data-testid="stButton"] > button {
   margin-bottom: 14px;
   box-shadow: 4px 4px 0 rgba(178,180,244,0.45);
 }
+
 .info-note {
   background: #FFF7E6;
   border: 1px solid #F2E2B8;
@@ -430,49 +320,7 @@ div[data-testid="stHorizontalBlock"] div[data-testid="stButton"] > button {
   margin-bottom: 14px;
 }
 
-/* Buttons */
-div[data-testid="stButton"] > button {
-  width: 100% !important;
-  padding: 13px 18px !important;
-  border-radius: 999px !important;
-  font-family: 'Plus Jakarta Sans', sans-serif !important;
-  font-size: 14px !important;
-  font-weight: 800 !important;
-  border: 1.5px solid var(--royal) !important;
-  color: var(--royal) !important;
-  background: white !important;
-  transition: transform 0.12s ease, box-shadow 0.12s ease !important;
-  box-shadow: none !important;
-}
-div[data-testid="stButton"] > button:hover {
-  transform: translateY(-1px) !important;
-  box-shadow: 0 8px 18px rgba(70,76,230,0.12) !important;
-}
-div[data-testid="stButton"] > button[kind="primary"] {
-  background: var(--orange) !important;
-  color: white !important;
-  border-color: var(--orange) !important;
-}
-
-/* Upload */
-.upload-zone {
-  border: 1.5px dashed #C8B88A;
-  border-radius: 18px;
-  padding: 12px 14px;
-  background: #FFFDF7;
-  margin-bottom: 10px;
-}
-.upload-title { font-size: 14px; font-weight: 700; color: var(--mid); }
-.upload-hint { font-size: 11px; color: #AAA; margin-top: 3px; }
-.stFileUploader [data-testid="stFileUploaderDropzone"] {
-  background: #FFFDF7 !important;
-  border: 1.5px dashed #C8B88A !important;
-  border-radius: 18px !important;
-  min-height: 58px !important;
-  padding: 10px !important;
-}
-
-/* Health */
+/* AI result cards */
 .health-card {
   background: var(--mustard);
   border-radius: 24px;
@@ -483,6 +331,7 @@ div[data-testid="stButton"] > button[kind="primary"] {
   gap: 16px;
   box-shadow: 0 10px 24px rgba(232,101,10,0.08);
 }
+
 .health-icon-small {
   width:56px; height:56px;
   border-radius:50%;
@@ -490,71 +339,89 @@ div[data-testid="stButton"] > button[kind="primary"] {
   display:flex; align-items:center; justify-content:center;
   flex-shrink:0;
 }
+
 .health-text-block h4 {
   font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em;
   color: #7A5E20; font-weight: 800; margin: 0;
 }
+
 .health-score-num {
   font-size: 52px; font-weight: 800; color: var(--dark);
   line-height: 1; margin: 2px 0; letter-spacing: -0.06em;
 }
+
 .health-score-num span { font-size: 20px; color: #7A5E20; letter-spacing: -0.02em; }
 .health-status-label { font-size: 12px; color: #7A5E20; font-weight: 700; }
 
-/* Metrics */
 .metrics-grid {
   display: grid; grid-template-columns: 1fr 1fr;
   gap: 12px; margin-bottom: 14px;
 }
+
 .metric-card {
   background: white; border-radius: 18px; padding: 14px;
   border: 1px solid var(--line);
   box-shadow: 0 8px 22px rgba(70,76,230,0.04);
 }
+
 .metric-label {
   font-size: 10px; color: var(--light); text-transform: uppercase;
   letter-spacing: 0.06em; font-weight: 800; margin-bottom: 4px;
 }
+
 .metric-value { font-size: 20px; font-weight: 800; color: var(--dark); letter-spacing: -0.04em; }
 
-/* Maturity */
 .maturity-card {
   background: white; border-radius: 20px; padding: 16px 18px;
   margin-bottom: 14px; border: 1px solid var(--line);
   box-shadow: 0 8px 22px rgba(70,76,230,0.04);
 }
+
 .maturity-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px; }
 .maturity-label { font-size: 10px; color: var(--light); text-transform: uppercase; letter-spacing: 0.06em; font-weight: 800; }
 .maturity-value { font-size: 14px; color: var(--royal); font-weight: 800; }
 .maturity-track { height: 8px; background: var(--mist); border-radius: 99px; overflow: hidden; margin-bottom: 10px; }
+
 .maturity-fill {
   height: 100%; background: linear-gradient(90deg, var(--peri), var(--royal));
   border-radius: 99px; transition: width 1.2s cubic-bezier(0.4,0,0.2,1);
 }
-.maturity-dots { display: flex; gap: 5px; flex-wrap: wrap; }
-.mdot { width: 8px; height: 8px; border-radius: 50%; background: var(--mist); display: inline-block; }
-.mdot.filled { background: var(--peri); }
-.mdot.active { background: var(--royal); transform: scale(1.3); }
 
-/* Summary panels */
 .panels-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+
 .panel-card {
   background: white; border-radius: 18px; border: 1px solid var(--line);
   overflow: hidden; box-shadow: 0 10px 26px rgba(70,76,230,0.045);
 }
+
 .panel-header { padding: 12px 14px 10px; display: flex; align-items: center; gap: 8px; }
 .panel-header.problems { border-bottom: 2px solid var(--cream); }
 .panel-header.recs { border-bottom: 2px solid var(--mist); }
 .panel-title { font-size: 13px; font-weight: 800; color: var(--dark); }
-.panel-badge { margin-left: auto; font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 99px; }
-.badge-amber { background: #FFF0C8; color: #9A6700; }
-.badge-blue  { background: var(--mist); color: var(--royal); }
-.panel-preview { padding: 8px 14px 12px; font-size: 12px; color: var(--mid); line-height: 1.55; }
-.panel-item { display: flex; gap: 7px; margin-bottom: 6px; align-items: flex-start; }
-.bullet-tri { flex-shrink:0; margin-top:5px; width:0; height:0; border-top:5px solid transparent; border-bottom:5px solid transparent; border-left:8px solid; }
-.bullet-circle { flex-shrink:0; width:8px; height:8px; border-radius:50%; margin-top:5px; }
 
-/* Sheet card (for sub-panels) */
+.panel-preview {
+  padding: 10px 14px 14px;
+  font-size: 12px;
+  color: var(--mid);
+  line-height: 1.55;
+}
+
+.panel-item {
+  display: flex;
+  gap: 7px;
+  margin-bottom: 6px;
+  align-items: flex-start;
+}
+
+.bullet-tri {
+  flex-shrink:0;
+  margin-top:5px;
+  width:0; height:0;
+  border-top:5px solid transparent;
+  border-bottom:5px solid transparent;
+  border-left:8px solid;
+}
+
 .sheet-card {
   background: white;
   border-radius: 26px 26px 18px 18px;
@@ -562,33 +429,16 @@ div[data-testid="stButton"] > button[kind="primary"] {
   padding: 18px 18px 16px;
   margin: 14px 0;
   box-shadow: 0 -6px 0 rgba(178,180,244,0.35), 0 18px 38px rgba(70,76,230,0.10);
-  animation: sheetUp 0.28s ease-out;
 }
-@keyframes sheetUp {
-  from { transform: translateY(28px); opacity: 0; }
-  to   { transform: translateY(0); opacity: 1; }
-}
+
 .sheet-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
 .sheet-title { font-size: 18px; font-weight: 800; color: var(--royal); letter-spacing: -0.03em; }
-.sheet-x {
-  width:34px; height:34px; border-radius:50%; background:#F6F6FF;
-  display:flex; align-items:center; justify-content:center;
-  color:var(--royal); font-weight:800;
-}
 .sheet-item { display:flex; gap:10px; margin-bottom:10px; align-items:flex-start; font-size:13px; color:var(--mid); line-height:1.5; }
-.sheet-mini-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
-.sheet-mini { background:#F8F8FF; border:1px solid var(--mist); border-radius:16px; padding:14px; }
-.sheet-mini-label { font-size:10px; color:var(--light); text-transform:uppercase; letter-spacing:.06em; font-weight:800; }
-.sheet-mini-value { font-size:18px; color:var(--dark); font-weight:800; margin-top:4px; }
-
-/* Photo */
-.photo-card { background:white; border-radius:18px; border:1px solid var(--line); overflow:hidden; margin-bottom:12px; }
-.photo-card-header {
-  padding:12px 16px; border-bottom:1px solid var(--line);
-  font-size:11px; text-transform:uppercase; letter-spacing:0.06em; color:var(--light); font-weight:800;
-}
 </style>
-""", unsafe_allow_html=True)
+""",
+    unsafe_allow_html=True,
+)
+
 
 # ─────────────────────────────────────────────
 # SVG ILLUSTRATIONS
@@ -610,8 +460,6 @@ HERO_PATTERN = """
   <path d="M50 100 Q70 80 90 100 Q110 120 130 100" stroke="#7A5E20" stroke-width="1" fill="none"/>
   <circle cx="30" cy="130" r="14" stroke="#7A5E20" stroke-width="1.2" fill="none"/>
   <circle cx="100" cy="130" r="8" stroke="#7A5E20" stroke-width="1" fill="none"/>
-  <path d="M5 90 L15 90 M10 85 L10 95" stroke="#7A5E20" stroke-width="1.2"/>
-  <path d="M120 70 L130 70 M125 65 L125 75" stroke="#7A5E20" stroke-width="1"/>
 </svg>"""
 
 SPROUT_SVG = """
@@ -645,76 +493,173 @@ CHECK_SVG = """<svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/200
   <path d="M5 8 L7 10 L11 6" stroke="#7C80ED" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>"""
 
+
 # ─────────────────────────────────────────────
 # HELPERS
 # ─────────────────────────────────────────────
-def score_label(score):
-    if score >= 80: return "Mükemmel — Neredeyse Hazır"
-    if score >= 60: return "Orta — Geliştirilmeli"
-    if score >= 40: return "Zayıf — Dikkat Gerekli"
-    return "Kritik — Hemen Müdahale"
+def score_label(score: int) -> str:
+    if score >= 80:
+        return "İyi durumda"
+    if score >= 60:
+        return "Geliştirilebilir"
+    if score >= 40:
+        return "Dikkat gerekli"
+    return "Hemen müdahale"
 
-def parse_months(ready_in_str):
-    text = ready_in_str.lower().replace("-", " ")
+
+def parse_months(ready_in_str: str) -> tuple[float, float]:
+    text = str(ready_in_str).lower().replace("-", " ")
     nums = [int(s) for s in text.split() if s.isdigit()]
     if nums:
-        low = nums[0]; high = nums[-1] if len(nums) > 1 else low
+        low = nums[0]
+        high = nums[-1] if len(nums) > 1 else low
         avg = (low + high) / 2
         return max(0.05, min(0.95, 1 - (avg / 12))), avg
     return 0.3, 4
 
-def dots_html(progress, total=20):
-    filled = max(1, round(progress * total))
-    dots = []
-    for i in range(total):
-        if i < filled - 1: dots.append('<span class="mdot filled"></span>')
-        elif i == filled - 1: dots.append('<span class="mdot active"></span>')
-        else: dots.append('<span class="mdot"></span>')
-    return "".join(dots)
 
-def tri(color): return f'<span class="bullet-tri" style="border-left-color:{color}"></span>'
-def circle(color): return f'<span class="bullet-circle" style="background:{color}"></span>'
+def tri(color: str) -> str:
+    return f'<span class="bullet-tri" style="border-left-color:{color}"></span>'
 
-def turning_interval_days(compost_type):
-    if "Sıcak" in compost_type: return 3
-    if "Bahçe" in compost_type: return 7
+
+def turning_interval_days(compost_type: str) -> int:
+    if "Sıcak" in compost_type:
+        return 3
+    if "Bahçe" in compost_type:
+        return 7
     return 10
 
-def turning_message(days_until):
-    if days_until < 0: return f"{abs(days_until)} gün gecikti"
-    if days_until == 0: return "Bugün"
-    if days_until == 1: return "Yarın"
+
+def turning_message(days_until: int) -> str:
+    if days_until < 0:
+        return f"{abs(days_until)} gün gecikti"
+    if days_until == 0:
+        return "Bugün"
+    if days_until == 1:
+        return "Yarın"
     return f"{days_until} gün sonra"
 
-def last_turn_message(days_since_turn):
-    if days_since_turn == 0: return "Bugün"
-    if days_since_turn == 1: return "Dün"
+
+def last_turn_message(days_since_turn: int) -> str:
+    if days_since_turn == 0:
+        return "Bugün"
+    if days_since_turn == 1:
+        return "Dün"
     return f"{days_since_turn} gün önce"
 
-def journey_from_age(age_days, compost_type):
+
+def journey_from_age(age_days: int, compost_type: str, health_score: int | None = None) -> tuple[str, int]:
     total_days = 90 if "Sıcak" in compost_type else 180
-    pct = max(8, min(95, int((age_days / total_days) * 100)))
-    if pct < 25: stage = "Başlangıç"
-    elif pct < 65: stage = "Aktif"
-    elif pct < 90: stage = "Olgunlaşma"
-    else: stage = "Hazır"
+    age_pct = max(8, min(95, int((age_days / total_days) * 100)))
+
+    # AI should influence the journey gently, not dominate it.
+    if health_score is not None:
+        health_factor = max(0.75, min(1.15, health_score / 75))
+        pct = int(age_pct * health_factor)
+        pct = max(8, min(95, pct))
+    else:
+        pct = age_pct
+
+    if pct < 25:
+        stage = "Başlangıç"
+    elif pct < 65:
+        stage = "Aktif"
+    elif pct < 90:
+        stage = "Olgunlaşma"
+    else:
+        stage = "Hazır"
     return stage, pct
 
-def make_short_label(text, max_words=3):
+
+def make_short_label(text: str, max_words: int = 4) -> str:
     words = re.sub(r"[.!?]", "", str(text)).split()
     return " ".join(words[:max_words])
 
-PALETTE = ["#464CE6", "#7C80ED", "#B2B4F4"]
+
+def safe_json_loads(text: str) -> dict:
+    cleaned = text.strip().replace("```json", "").replace("```", "").strip()
+    match = re.search(r"\{.*\}", cleaned, flags=re.DOTALL)
+    if match:
+        cleaned = match.group(0)
+    return json.loads(cleaned)
+
+
+def normalize_ai_data(data: dict) -> dict:
+    issue = data.get("issue") or data.get("main_issue") or ""
+    recs = data.get("recommendations", [])
+    if isinstance(recs, str):
+        recs = [recs]
+    recs = [make_short_label(r, 5) for r in recs if str(r).strip()][:2]
+
+    score = data.get("health_score", 60)
+    try:
+        score = int(score)
+    except Exception:
+        score = 60
+    score = max(0, min(100, score))
+
+    return {
+        "health_score": score,
+        "moisture": data.get("moisture", "Belirsiz"),
+        "balance": data.get("balance", "Belirsiz"),
+        "ready_in": data.get("ready_in", "3-6 ay"),
+        "issue": make_short_label(issue, 5) or "Belirgin sorun yok",
+        "recommendations": recs or ["Havalandırmayı sürdür"],
+    }
+
+
+def analyze_compost_image(image: Image.Image, compost_type: str, start_date: date, age_days: int,
+                          rule_stage: str, last_turn_date: date, days_since_turn: int,
+                          days_until_turn: int, material_amount: float) -> dict:
+    model = genai.GenerativeModel("gemini-2.5-flash")
+
+    prompt = f"""
+You are Smart Compost Coach, a simple daily compost assistant.
+
+Analyze the compost image and user tracking data.
+Return ONLY valid JSON. No markdown. No explanation.
+
+Required JSON:
+{{
+  "health_score": 0,
+  "moisture": "",
+  "balance": "",
+  "ready_in": "",
+  "issue": "",
+  "recommendations": []
+}}
+
+User data:
+- Compost type: {compost_type}
+- Start date: {start_date}
+- Compost age: {age_days} days
+- Journey stage: {rule_stage}
+- Last turning date: {last_turn_date}
+- Days since last turning: {days_since_turn}
+- Next turning due in: {days_until_turn} days
+- Approximate material amount: {material_amount} kg
+
+Rules:
+- health_score: integer 0-100
+- moisture: one of "Kuru", "Optimal", "Islak"
+- balance: one of "Karbon Fazla", "Dengeli", "Azot Fazla"
+- ready_in: short Turkish estimate, e.g. "2-3 ay"
+- issue: one short Turkish phrase, max 5 words
+- recommendations: max 2 Turkish phrases, each max 5 words
+- Keep it simple like a compost coach.
+"""
+    response = model.generate_content([prompt, image])
+    return normalize_ai_data(safe_json_loads(response.text))
+
 
 # ─────────────────────────────────────────────
 # SESSION STATE
 # ─────────────────────────────────────────────
 today = date.today()
+
 defaults = {
     "sheet": None,
     "care_done": False,
-    "edit_open": False,
-    "analysis_open": False,
     "show_balloons": False,
     "compost_type": "Ev tipi / soğuk kompost",
     "start_date": today - timedelta(days=22),
@@ -723,31 +668,138 @@ defaults = {
     "ai_data": None,
     "ai_image": None,
 }
-for k, v in defaults.items():
-    if k not in st.session_state:
-        st.session_state[k] = v
+
+for key, value in defaults.items():
+    if key not in st.session_state:
+        st.session_state[key] = value
+
 
 # ─────────────────────────────────────────────
 # RULE-BASED VALUES
 # ─────────────────────────────────────────────
 compost_type = st.session_state.compost_type
-start_date   = st.session_state.start_date
-last_turn_date  = st.session_state.last_turn_date
+start_date = st.session_state.start_date
+last_turn_date = st.session_state.last_turn_date
 material_amount = st.session_state.material_amount
 
-age_days        = max(0, (date.today() - start_date).days)
-interval        = turning_interval_days(compost_type)
+age_days = max(0, (date.today() - start_date).days)
+interval = turning_interval_days(compost_type)
 days_since_turn = max(0, (date.today() - last_turn_date).days)
-last_turn_text  = last_turn_message(days_since_turn)
-next_turn_date  = last_turn_date + timedelta(days=interval)
+last_turn_text = last_turn_message(days_since_turn)
+next_turn_date = last_turn_date + timedelta(days=interval)
 days_until_turn = (next_turn_date - date.today()).days
-turn_label      = turning_message(days_until_turn)
-rule_stage, rule_journey_pct = journey_from_age(age_days, compost_type)
+turn_label = turning_message(days_until_turn)
+
+health_for_journey = None
+if st.session_state.ai_data is not None:
+    health_for_journey = st.session_state.ai_data.get("health_score")
+
+rule_stage, rule_journey_pct = journey_from_age(age_days, compost_type, health_for_journey)
+
+
+# ─────────────────────────────────────────────
+# DIALOGS
+# ─────────────────────────────────────────────
+@st.dialog("📷 Kompostunu Analiz Et")
+def analysis_dialog():
+    st.caption("Fotoğraf yükle, Smart Compost Coach kısa bir bakım önerisi versin.")
+
+    uploaded_file = st.file_uploader(
+        "Fotoğraf yükle",
+        type=["jpg", "jpeg", "png"],
+        label_visibility="visible",
+        key="analysis_uploader",
+    )
+
+    if uploaded_file is not None:
+        image_preview = Image.open(uploaded_file)
+        st.image(image_preview, caption="Yüklenen fotoğraf", use_container_width=True)
+
+    col1, col2 = st.columns([3, 1])
+
+    with col1:
+        analyze_clicked = st.button("🔍 Analiz Et", type="primary", use_container_width=True)
+
+    with col2:
+        close_clicked = st.button("✕ Kapat", use_container_width=True)
+
+    if close_clicked:
+        st.rerun()
+
+    if analyze_clicked:
+        if uploaded_file is None:
+            st.warning("Lütfen önce bir kompost fotoğrafı yükleyin.")
+            return
+
+        image = Image.open(uploaded_file)
+
+        with st.spinner("Kompostun analiz ediliyor..."):
+            try:
+                data = analyze_compost_image(
+                    image=image,
+                    compost_type=compost_type,
+                    start_date=start_date,
+                    age_days=age_days,
+                    rule_stage=rule_stage,
+                    last_turn_date=last_turn_date,
+                    days_since_turn=days_since_turn,
+                    days_until_turn=days_until_turn,
+                    material_amount=material_amount,
+                )
+                st.session_state.ai_data = data
+                st.session_state.ai_image = image.copy()
+                st.session_state.sheet = None
+                st.rerun()
+            except Exception as e:
+                st.error(f"Analiz sırasında hata oluştu: {e}")
+
+
+@st.dialog("🌱 Kompost Bilgileri")
+def edit_compost_dialog():
+    with st.form("compost_info_form"):
+        new_type = st.selectbox(
+            "Kompost tipi",
+            ["Ev tipi / soğuk kompost", "Bahçe tipi / soğuk kompost", "Sıcak kompost"],
+            index=["Ev tipi / soğuk kompost", "Bahçe tipi / soğuk kompost", "Sıcak kompost"].index(
+                st.session_state.compost_type
+            ),
+        )
+
+        f1, f2 = st.columns(2)
+        with f1:
+            new_start = st.date_input("Başlangıç tarihi", value=st.session_state.start_date)
+        with f2:
+            new_turn = st.date_input("Son çevirme tarihi", value=st.session_state.last_turn_date)
+
+        new_amount = st.number_input(
+            "Yaklaşık materyal miktarı (kg)",
+            min_value=0.0,
+            value=float(st.session_state.material_amount),
+            step=0.5,
+        )
+
+        ef1, ef2 = st.columns([3, 1])
+        with ef1:
+            saved = st.form_submit_button("✓ Kaydet", type="primary", use_container_width=True)
+        with ef2:
+            cancel = st.form_submit_button("✕ İptal", use_container_width=True)
+
+        if saved:
+            st.session_state.compost_type = new_type
+            st.session_state.start_date = new_start
+            st.session_state.last_turn_date = new_turn
+            st.session_state.material_amount = new_amount
+            st.rerun()
+
+        if cancel:
+            st.rerun()
+
 
 # ─────────────────────────────────────────────
 # HERO
 # ─────────────────────────────────────────────
-st.markdown(f"""
+st.markdown(
+    f"""
 <div class="hero-card">
   {HERO_PATTERN}
   <div style="position:relative;z-index:1">
@@ -756,137 +808,16 @@ st.markdown(f"""
     <div class="hero-sub">Kompostunu takip et, fotoğrafla analiz et.</div>
   </div>
 </div>
-""", unsafe_allow_html=True)
+""",
+    unsafe_allow_html=True,
+)
 
-# ═══════════════════════════════════════════════════════
-# ANALYSIS MODAL OVERLAY
-# Opens as a true fixed overlay with blurred backdrop.
-# The modal card is rendered first (z-index high),
-# then a full-page backdrop is JS-hoisted to body.
-# ═══════════════════════════════════════════════════════
-if st.session_state.analysis_open:
 
-    # 1. Inject backdrop into body via JS
-    st.markdown("""
-<style>
-#sccAbdrop {
-  position:fixed; inset:0; z-index:99997;
-  background:rgba(18,18,38,0.55);
-  backdrop-filter:blur(7px);
-  -webkit-backdrop-filter:blur(7px);
-  animation:sccFd .18s ease;
-}
-@keyframes sccFd{from{opacity:0}to{opacity:1}}
-</style>
-<div id="sccAbdrop"></div>
-<script>
-!function hoist(){
-  var e=document.getElementById('sccAbdrop');
-  if(e&&e.parentElement!==document.body)document.body.appendChild(e);
-}();
-setTimeout(function(){
-  var e=document.getElementById('sccAbdrop');
-  if(e&&e.parentElement!==document.body)document.body.appendChild(e);
-},150);
-</script>
-""", unsafe_allow_html=True)
-
-    # 2. Modal card — sits above backdrop
-    st.markdown("""
-<div style="
-  position:relative; z-index:99999;
-  background:white; border-radius:28px;
-  border:2px solid #E8E8FC;
-  padding:24px 20px 10px;
-  box-shadow:0 32px 80px rgba(18,18,60,0.28), 0 0 0 1px rgba(178,180,244,0.18);
-  animation:mcSl .22s cubic-bezier(0.34,1.4,0.64,1);
-  margin-bottom:0;
-">
-@keyframes mcSl{from{opacity:0;transform:translateY(18px) scale(0.96)}to{opacity:1;transform:translateY(0) scale(1)}}
-<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
-  <div style="font-size:19px;font-weight:800;color:#464CE6;letter-spacing:-0.03em;">📷 Kompostunu Analiz Et</div>
-</div>
-<div class="upload-zone">
-  <div class="upload-title">Fotoğraf yükle</div>
-  <div class="upload-hint">Fotoğraf seç veya sürükle bırak • JPG, PNG</div>
-</div>
-""", unsafe_allow_html=True)
-
-    _, close_top_col = st.columns([8, 1])
-    with close_top_col:
-        close_analysis_top = st.button("✕", use_container_width=True, key="close_analysis_top", help="Kapat")
-
-    uploaded_file = st.file_uploader(
-        "Fotoğraf",
-        type=["jpg","jpeg","png"],
-        label_visibility="collapsed",
-        key="analysis_uploader"
-    )
-
-    acol1, acol2 = st.columns([3, 1])
-    with acol1:
-        analyze_clicked = st.button("🔍 Kompostu Analiz Et", type="primary", use_container_width=True, key="do_analyze")
-    with acol2:
-        close_analysis = st.button("✕ Kapat", use_container_width=True, key="close_analysis")
-
-    st.markdown("</div>", unsafe_allow_html=True)
-
-    if close_analysis or close_analysis_top:
-        st.session_state.analysis_open = False
-        st.rerun()
-
-    if analyze_clicked:
-        if uploaded_file is None:
-            st.warning("Lütfen önce bir kompost fotoğrafı yükleyin.")
-        else:
-            image = Image.open(uploaded_file)
-            model = genai.GenerativeModel("gemini-2.5-flash")
-            prompt = f"""
-Analyze the compost image and the user's compost tracking data.
-Return ONLY valid JSON with this exact structure:
-{{
-  "health_score": 0,
-  "moisture": "",
-  "balance": "",
-  "ready_in": "",
-  "problems": [],
-  "recommendations": []
-}}
-User tracking data:
-- Compost type: {compost_type}
-- Start date: {start_date}
-- Compost age: {age_days} days
-- Current journey stage: {rule_stage}
-- Last turning date: {last_turn_date}
-- Days since last turning: {days_since_turn}
-- Next turning due in: {days_until_turn} days
-- Approximate material amount: {material_amount} kg
-Rules:
-* health_score: integer 0-100
-* moisture: one of — Kuru, Optimal, Islak
-* balance: one of — Karbon Fazla, Dengeli, Azot Fazla
-* ready_in: short Turkish time estimate e.g. "3-6 ay"
-* problems: max 2 items, each max 3 words, in Turkish
-* recommendations: max 3 items, each max 3 words, in Turkish
-* no explanation outside JSON
-"""
-            with st.spinner("Kompostun analiz ediliyor..."):
-                try:
-                    response = model.generate_content([prompt, image])
-                    clean = response.text.strip().replace("```json","").replace("```","")
-                    data = json.loads(clean)
-                    st.session_state.ai_data = data
-                    st.session_state.ai_image = image.copy()
-                    st.session_state.analysis_open = False
-                    st.session_state.sheet = None
-                    st.rerun()
-                except Exception as e:
-                    st.error(f"Analiz sırasında hata oluştu: {e}")
-
-# ═══════════════════════════════════════════════════════
+# ─────────────────────────────────────────────
 # MY COMPOST DASHBOARD
-# ═══════════════════════════════════════════════════════
-st.markdown(f"""
+# ─────────────────────────────────────────────
+st.markdown(
+    f"""
 <div class="card">
   <div class="card-head">
     <div>
@@ -895,6 +826,7 @@ st.markdown(f"""
     </div>
     <div class="icon-chip">{SPROUT_SVG}</div>
   </div>
+
   <div class="compost-summary">
     <div class="summary-main">
       <div class="summary-label">Kompost Yaşı</div>
@@ -907,6 +839,7 @@ st.markdown(f"""
       <div class="summary-note">Son çevirme: {last_turn_text}</div>
     </div>
   </div>
+
   <div class="card-title" style="font-size:15px;margin-top:16px;">Compost Journey</div>
   <div class="journey-row">
     <span class="journey-step {'active' if rule_stage == 'Başlangıç' else ''}">Başlangıç</span>
@@ -918,123 +851,37 @@ st.markdown(f"""
     <div class="journey-fill" style="width:{rule_journey_pct}%"></div>
   </div>
 </div>
-""", unsafe_allow_html=True)
+""",
+    unsafe_allow_html=True,
+)
 
-# ── Info pills (equal width) ──
 p1, p2, p3 = st.columns([1, 1, 1])
 with p1:
     if st.button(compost_type, use_container_width=True, key="edit_type_pill"):
-        st.session_state.edit_open = True
-        st.session_state.analysis_open = False
-        st.session_state.sheet = None
-        st.rerun()
+        edit_compost_dialog()
 with p2:
     if st.button(f"Yaklaşık {material_amount:.1f} kg", use_container_width=True, key="edit_amount_pill"):
-        st.session_state.edit_open = True
-        st.session_state.analysis_open = False
-        st.session_state.sheet = None
-        st.rerun()
+        edit_compost_dialog()
 with p3:
     if st.button(f"Başlangıç: {start_date.strftime('%d.%m.%Y')}", use_container_width=True, key="edit_start_pill"):
-        st.session_state.edit_open = True
-        st.session_state.analysis_open = False
-        st.session_state.sheet = None
-        st.rerun()
+        edit_compost_dialog()
 
-if st.button("📷 Kompostunu Analiz Et", use_container_width=True, key="open_analysis_main"):
-    st.session_state.analysis_open = True
-    st.session_state.edit_open = False
-    st.session_state.sheet = None
-    st.rerun()
+if st.button("📷 Kompostunu Analiz Et", type="primary", use_container_width=True, key="open_analysis_main"):
+    analysis_dialog()
 
-# ═══════════════════════════════════════════════════════
-# EDIT MODAL OVERLAY — same system as analysis
-# ═══════════════════════════════════════════════════════
-if st.session_state.edit_open:
-
-    # 1. Backdrop (warm mustard-tinted)
-    st.markdown("""
-<style>
-#sccEbdrop {
-  position:fixed; inset:0; z-index:99997;
-  background:rgba(28,20,4,0.50);
-  backdrop-filter:blur(7px);
-  -webkit-backdrop-filter:blur(7px);
-  animation:sccFd .18s ease;
-}
-</style>
-<div id="sccEbdrop"></div>
-<script>
-!function hoist(){
-  var e=document.getElementById('sccEbdrop');
-  if(e&&e.parentElement!==document.body)document.body.appendChild(e);
-}();
-setTimeout(function(){
-  var e=document.getElementById('sccEbdrop');
-  if(e&&e.parentElement!==document.body)document.body.appendChild(e);
-},150);
-</script>
-""", unsafe_allow_html=True)
-
-    # 2. Modal card
-    st.markdown("""
-<div style="
-  position:relative; z-index:99999;
-  background:white; border-radius:28px;
-  border:2px solid #FFE9BD;
-  padding:24px 20px 10px;
-  box-shadow:0 32px 80px rgba(28,20,0,0.22), 0 0 0 1px rgba(255,213,128,0.28);
-  animation:mcSl .22s cubic-bezier(0.34,1.4,0.64,1);
-  margin-bottom:0;
-">
-<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
-  <div style="font-size:19px;font-weight:800;color:#464CE6;letter-spacing:-0.03em;">🌱 Kompost Bilgileri</div>
-</div>
-""", unsafe_allow_html=True)
-
-    with st.form("compost_info_form"):
-        new_type = st.selectbox(
-            "Kompost tipi",
-            ["Ev tipi / soğuk kompost", "Bahçe tipi / soğuk kompost", "Sıcak kompost"],
-            index=["Ev tipi / soğuk kompost", "Bahçe tipi / soğuk kompost", "Sıcak kompost"].index(st.session_state.compost_type)
-        )
-        f1, f2 = st.columns(2)
-        with f1:
-            new_start = st.date_input("Başlangıç tarihi", value=st.session_state.start_date)
-        with f2:
-            new_turn = st.date_input("Son çevirme tarihi", value=st.session_state.last_turn_date)
-        new_amount = st.number_input(
-            "Yaklaşık materyal miktarı (kg)",
-            min_value=0.0, value=float(st.session_state.material_amount), step=0.5
-        )
-        ef1, ef2 = st.columns([3, 1])
-        with ef1:
-            saved = st.form_submit_button("✓ Kaydet", use_container_width=True)
-        with ef2:
-            cancel = st.form_submit_button("✕ İptal", use_container_width=True)
-
-        if saved:
-            st.session_state.compost_type = new_type
-            st.session_state.start_date   = new_start
-            st.session_state.last_turn_date = new_turn
-            st.session_state.material_amount = new_amount
-            st.session_state.edit_open = False
-            st.rerun()
-        if cancel:
-            st.session_state.edit_open = False
-            st.rerun()
-
-    st.markdown("</div>", unsafe_allow_html=True)
 
 # ─────────────────────────────────────────────
 # DAILY CHECK-IN
 # ─────────────────────────────────────────────
-st.markdown("""
+st.markdown(
+    """
 <div class="check-card">
   <div class="check-title">Günlük Kontrol</div>
   <div class="check-sub">Bugün kompostu havalandırdın mı?</div>
 </div>
-""", unsafe_allow_html=True)
+""",
+    unsafe_allow_html=True,
+)
 
 b1, b2 = st.columns(2)
 with b1:
@@ -1056,31 +903,39 @@ if st.session_state.get("show_balloons"):
     st.session_state.show_balloons = False
 
 if st.session_state.care_done:
-    st.markdown("""
+    st.markdown(
+        """
 <div class="success-note">
   Güzel iş! Bugünkü bakım tamamlandı. Kompostun bugün biraz daha nefes aldı.
 </div>
-""", unsafe_allow_html=True)
+""",
+        unsafe_allow_html=True,
+    )
 else:
-    st.markdown("""
+    st.markdown(
+        """
 <div class="info-note">
   Havalandırma, ayrışmayı hızlandırır ve kötü koku riskini azaltır.
 </div>
-""", unsafe_allow_html=True)
+""",
+        unsafe_allow_html=True,
+    )
+
 
 # ─────────────────────────────────────────────
 # AI RESULTS
 # ─────────────────────────────────────────────
 if st.session_state.ai_data is not None:
-    data  = st.session_state.ai_data
+    data = st.session_state.ai_data
     image = st.session_state.ai_image
     score = data["health_score"]
-    progress, avg_months = parse_months(data.get("ready_in", "4 ay"))
+    progress, _ = parse_months(data.get("ready_in", "4 ay"))
     bar_pct = int(progress * 100)
-    probs = data.get("problems", [])
-    recs  = data.get("recommendations", [])
+    issue = data.get("issue", "Belirgin sorun yok")
+    recs = data.get("recommendations", [])[:2]
 
-    st.markdown(f"""
+    st.markdown(
+        f"""
 <div class="health-card">
   <div class="health-icon-small">{SPROUT_SVG}</div>
   <div class="health-text-block">
@@ -1089,9 +944,12 @@ if st.session_state.ai_data is not None:
     <div class="health-status-label">{score_label(score)}</div>
   </div>
 </div>
-""", unsafe_allow_html=True)
+""",
+        unsafe_allow_html=True,
+    )
 
-    st.markdown(f"""
+    st.markdown(
+        f"""
 <div class="metrics-grid">
   <div class="metric-card">
     {MOISTURE_SVG}
@@ -1104,9 +962,12 @@ if st.session_state.ai_data is not None:
     <div class="metric-value" style="font-size:17px">{data["balance"]}</div>
   </div>
 </div>
-""", unsafe_allow_html=True)
+""",
+        unsafe_allow_html=True,
+    )
 
-    st.markdown(f"""
+    st.markdown(
+        f"""
 <div class="maturity-card">
   <div class="maturity-header">
     <span class="maturity-label">Tahmini Olgunlaşma</span>
@@ -1115,93 +976,82 @@ if st.session_state.ai_data is not None:
   <div class="maturity-track">
     <div class="maturity-fill" style="width:{bar_pct}%"></div>
   </div>
-  <div class="maturity-dots">{dots_html(progress)}</div>
 </div>
-""", unsafe_allow_html=True)
+""",
+        unsafe_allow_html=True,
+    )
 
-    prob_items = "".join([
-        f'<div class="panel-item">{tri("#E8A020")}<span>{make_short_label(p)}</span></div>'
-        for p in probs[:2]
-    ])
-    rec_items = "".join([
-        f'<div class="panel-item">{tri("#7C80ED")}<span>{make_short_label(r)}</span></div>'
-        for r in recs[:2]
-    ])
+    rec_items = "".join(
+        [f'<div class="panel-item">{tri("#7C80ED")}<span>{make_short_label(r, 5)}</span></div>' for r in recs]
+    )
 
-    st.markdown(f"""
+    st.markdown(
+        f"""
 <div class="panels-row">
   <div class="panel-card">
     <div class="panel-header problems">
       {WARNING_SVG}
-      <span class="panel-title">Sorunlar</span>
-      <span class="panel-badge badge-amber">{len(probs)}</span>
+      <span class="panel-title">Dikkat</span>
     </div>
-    <div class="panel-preview">{prob_items}</div>
+    <div class="panel-preview">
+      <div class="panel-item">{tri("#E8A020")}<span>{issue}</span></div>
+    </div>
   </div>
+
   <div class="panel-card">
     <div class="panel-header recs">
       {CHECK_SVG}
-      <span class="panel-title">Öneriler</span>
-      <span class="panel-badge badge-blue">{len(recs)}</span>
+      <span class="panel-title">Bugünkü Tavsiye</span>
     </div>
     <div class="panel-preview">{rec_items}</div>
   </div>
 </div>
-""", unsafe_allow_html=True)
+""",
+        unsafe_allow_html=True,
+    )
 
-    s1, s2, s3, s4 = st.columns(4)
+    s1, s2, s3 = st.columns(3)
     with s1:
-        if st.button("Sorunlar", use_container_width=True): st.session_state.sheet = "problems"
+        if st.button("Detay", use_container_width=True):
+            st.session_state.sheet = "status"
     with s2:
-        if st.button("Öneriler", use_container_width=True): st.session_state.sheet = "recommendations"
+        if st.button("Fotoğraf", use_container_width=True):
+            st.session_state.sheet = "photo"
     with s3:
-        if st.button("Durum", use_container_width=True): st.session_state.sheet = "status"
-    with s4:
-        if st.button("Fotoğraf", use_container_width=True): st.session_state.sheet = "photo"
-
-    if st.session_state.sheet:
-        if st.button("× Kapat", use_container_width=True):
+        if st.button("Kapat", use_container_width=True):
             st.session_state.sheet = None
             st.rerun()
 
-    if st.session_state.sheet == "problems":
-        items = "".join([
-            f'<div class="sheet-item">{circle("#E8A020")}<span>{p}</span></div>'
-            for p in probs
-        ]) or '<div class="sheet-item"><span>Belirgin sorun yok.</span></div>'
-        st.markdown(f"""
+    if st.session_state.sheet == "status":
+        rec_detail = "".join([f"<div class='sheet-item'>• {r}</div>" for r in recs])
+        st.markdown(
+            f"""
 <div class="sheet-card">
-  <div class="sheet-head"><div class="sheet-title">Sorunlar</div><div class="sheet-x">×</div></div>
-  {items}
-</div>""", unsafe_allow_html=True)
-
-    elif st.session_state.sheet == "recommendations":
-        items = "".join([
-            f'<div class="sheet-item">{circle(PALETTE[i % 3])}<span>{r}</span></div>'
-            for i, r in enumerate(recs)
-        ]) or '<div class="sheet-item"><span>Öneri bulunamadı.</span></div>'
-        st.markdown(f"""
-<div class="sheet-card">
-  <div class="sheet-head"><div class="sheet-title">Öneriler</div><div class="sheet-x">×</div></div>
-  {items}
-</div>""", unsafe_allow_html=True)
-
-    elif st.session_state.sheet == "status":
-        st.markdown(f"""
-<div class="sheet-card">
-  <div class="sheet-head"><div class="sheet-title">Kompost Durumu</div><div class="sheet-x">×</div></div>
-  <div class="sheet-mini-grid">
-    <div class="sheet-mini"><div class="sheet-mini-label">Nem</div><div class="sheet-mini-value">{data["moisture"]}</div></div>
-    <div class="sheet-mini"><div class="sheet-mini-label">C/N Dengesi</div><div class="sheet-mini-value">{data["balance"]}</div></div>
-    <div class="sheet-mini"><div class="sheet-mini-label">Kompost Yaşı</div><div class="sheet-mini-value">{age_days} gün</div></div>
-    <div class="sheet-mini"><div class="sheet-mini-label">Sonraki Çevirme</div><div class="sheet-mini-value">{turn_label}</div></div>
-  </div>
-</div>""", unsafe_allow_html=True)
+  <div class="sheet-head"><div class="sheet-title">Kompost Durumu</div></div>
+  <div class="sheet-item">Nem: <b>{data["moisture"]}</b></div>
+  <div class="sheet-item">Denge: <b>{data["balance"]}</b></div>
+  <div class="sheet-item">Dikkat: <b>{issue}</b></div>
+  <div class="sheet-item">Öneriler:</div>
+  {rec_detail}
+</div>
+""",
+            unsafe_allow_html=True,
+        )
 
     elif st.session_state.sheet == "photo":
-        st.markdown("""
+        st.markdown(
+            """
 <div class="sheet-card">
-  <div class="sheet-head"><div class="sheet-title">Yüklenen Fotoğraf</div><div class="sheet-x">×</div></div>
-</div>""", unsafe_allow_html=True)
+  <div class="sheet-head"><div class="sheet-title">Yüklenen Fotoğraf</div></div>
+</div>
+""",
+            unsafe_allow_html=True,
+        )
         if image is not None:
             st.image(image, use_container_width=True)
+
+
+# ─────────────────────────────────────────────
+# VERSION NOTE
+# ─────────────────────────────────────────────
+st.caption("Smart Compost Coach prototype · dialog-based stable version")
