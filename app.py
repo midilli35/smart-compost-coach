@@ -275,38 +275,10 @@ div[data-testid="stHorizontalBlock"] div[data-testid="stButton"] > button {
   transition: width 1s ease;
 }
 
-.history-card {
-  background: #FFFDF7;
-  border: 1px solid var(--line);
-  border-radius: 18px;
-  padding: 14px;
-  margin-top: 14px;
-}
 
-.history-head {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  margin-bottom: 8px;
-}
 
-.history-title {
-  font-size: 13px;
-  font-weight: 800;
-  color: var(--dark);
-}
 
-.history-note {
-  font-size: 10px;
-  color: var(--light);
-  font-weight: 700;
-}
 
-.sparkline-svg {
-  width: 100%;
-  height: 54px;
-  display: block;
-}
 
 .goal-card {
   background: #FFFDF7;
@@ -607,36 +579,56 @@ def normalize_ai_data(data: dict) -> dict:
     }
 
 
-def make_weekly_goals(ai_data: dict | None, days_until_turn: int, compost_type: str) -> list[str]:
+def make_weekly_goals(
+    ai_data: dict | None,
+    days_until_turn: int,
+    compost_type: str,
+    odor_status: str = "Yok",
+) -> list[str]:
+    """Weekly goals are generated from:
+    1) turning schedule,
+    2) user odor observation,
+    3) AI moisture diagnosis,
+    4) AI visual issue.
+
+    Balance is shown in analysis but does not generate goals because it is less reliable from image alone.
+    """
     goals = []
 
+    # 1. User data: turning schedule
     if days_until_turn <= 3:
         goals.append("Kompostu çevir")
 
+    # 2. User observation: odor
+    if odor_status == "Belirgin":
+        goals.append("Havalandırmayı artır")
+    elif odor_status == "Hafif":
+        goals.append("Kompostu karıştır")
+
+    # 3. AI diagnosis: moisture
     if ai_data:
         moisture = ai_data.get("moisture", "")
-        balance = ai_data.get("balance", "")
-        score = int(ai_data.get("health_score", 70))
+        issue = ai_data.get("issue", "").lower()
 
         if moisture == "Kuru":
-            goals.append("Nem seviyesini artır")
+            goals.append("Bir miktar su ekle")
         elif moisture == "Islak":
-            goals.append("Kuru kahverengi materyal ekle")
-        else:
-            goals.append("Nem seviyesini koru")
+            goals.append("Kuru yaprak veya karton ekle")
+        elif moisture == "Optimal":
+            goals.append("Avuç testi yap")
 
-        if balance == "Karbon Fazla":
-            goals.append("Yeşil materyal ekle")
-        elif balance == "Azot Fazla":
-            goals.append("Kahverengi materyal ekle")
-        else:
-            goals.append("Dengeyi koru")
-
-        if score < 60:
-            goals.append("Koku ve sıkışmayı kontrol et")
+        # 4. AI visual issue: only physical / visual issues
+        if any(word in issue for word in ["sıkış", "kompakt", "yoğun", "hava"]):
+            goals.append("Kompostu karıştır")
+        elif any(word in issue for word in ["büyük", "parça", "iri"]):
+            goals.append("Büyük parçaları küçült")
+        elif any(word in issue for word in ["kuru", "kuruluk"]):
+            goals.append("Bir miktar su ekle")
+        elif any(word in issue for word in ["ıslak", "çamur", "sulu"]):
+            goals.append("Kuru yaprak veya karton ekle")
     else:
         goals.append("İlk fotoğraf analizini yap")
-        goals.append("Bakım ritmini kaydet")
+        goals.append("Koku durumunu kontrol et")
 
     unique = []
     for goal in goals:
@@ -686,39 +678,10 @@ def journey_progress(age_days: int, compost_type: str, health_score: int | None,
     return stage, pct
 
 
-def sparkline_html(history: list[dict]) -> str:
-    if not history:
-        return '<div class="history-note">Henüz analiz yok</div>'
-
-    values = [int(item.get("score", 0)) for item in history[-6:]]
-    if len(values) == 1:
-        values = values * 2
-
-    width, height = 300, 54
-    pad_x, pad_y = 8, 8
-    step = (width - 2 * pad_x) / (len(values) - 1)
-    points = []
-    for i, score in enumerate(values):
-        x = pad_x + i * step
-        y = height - pad_y - (score / 100) * (height - 2 * pad_y)
-        points.append((x, y))
-
-    polyline = " ".join([f"{x:.1f},{y:.1f}" for x, y in points])
-    circles = "".join([f'<circle cx="{x:.1f}" cy="{y:.1f}" r="3.5" fill="#464CE6"/>' for x, y in points])
-    last = values[-1]
-
-    return f"""
-<svg class="sparkline-svg" viewBox="0 0 {width} {height}" preserveAspectRatio="none">
-  <line x1="{pad_x}" y1="{height-pad_y}" x2="{width-pad_x}" y2="{height-pad_y}" stroke="#E8E8FC" stroke-width="2"/>
-  <polyline points="{polyline}" fill="none" stroke="#7C80ED" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
-  {circles}
-  <text x="{width-pad_x}" y="13" text-anchor="end" fill="#464CE6" font-size="10" font-weight="800">{last}/100</text>
-</svg>"""
-
 
 def analyze_compost_image(image: Image.Image, compost_type: str, start_date: date, age_days: int,
                           rule_stage: str, last_turn_date: date, days_since_turn: int,
-                          days_until_turn: int, material_amount: float) -> dict:
+                          days_until_turn: int, material_amount: float, odor_status: str = "Yok") -> dict:
     model = genai.GenerativeModel("gemini-2.5-flash")
 
     prompt = f"""
@@ -747,6 +710,7 @@ User data:
 - Days since last turning: {days_since_turn}
 - Next turning due in: {days_until_turn} days
 - Approximate material amount: {material_amount} kg
+- User odor observation: {odor_status}
 
 Rules:
 - health_score: integer 0-100
@@ -769,9 +733,9 @@ defaults = {
     "start_date": today - timedelta(days=22),
     "last_turn_date": today - timedelta(days=3),
     "material_amount": 2.0,
+    "odor_status": "Yok",
     "ai_data": None,
     "ai_image": None,
-    "history": [],
     "goal_done": {},
     "goal_signature": "",
     "goal_balloons_shown": False,
@@ -786,6 +750,7 @@ compost_type = st.session_state.compost_type
 start_date = st.session_state.start_date
 last_turn_date = st.session_state.last_turn_date
 material_amount = st.session_state.material_amount
+odor_status = st.session_state.odor_status
 
 age_days = max(0, (date.today() - start_date).days)
 interval = turning_interval_days(compost_type)
@@ -795,7 +760,7 @@ next_turn_date = last_turn_date + timedelta(days=interval)
 days_until_turn = (next_turn_date - date.today()).days
 turn_label = turning_message(days_until_turn)
 
-goals = make_weekly_goals(st.session_state.ai_data, days_until_turn, compost_type)
+goals = make_weekly_goals(st.session_state.ai_data, days_until_turn, compost_type, odor_status)
 ensure_goal_state(goals)
 goal_done_count, goal_total_count, goal_ratio = goal_completion(goals)
 
@@ -844,21 +809,14 @@ def analysis_dialog():
                     days_since_turn=days_since_turn,
                     days_until_turn=days_until_turn,
                     material_amount=material_amount,
+                    odor_status=odor_status,
                 )
 
                 st.session_state.ai_data = data
                 st.session_state.ai_image = image.copy()
                 st.session_state.analysis_ready = True
 
-                st.session_state.history.append({
-                    "date": date.today().strftime("%d.%m"),
-                    "score": data["health_score"],
-                    "moisture": data["moisture"],
-                    "balance": data["balance"],
-                })
-                st.session_state.history = st.session_state.history[-8:]
-
-                new_goals = make_weekly_goals(data, days_until_turn, compost_type)
+                new_goals = make_weekly_goals(data, days_until_turn, compost_type, odor_status)
                 st.session_state.goal_signature = ""
                 ensure_goal_state(new_goals)
 
@@ -886,6 +844,13 @@ def edit_compost_dialog():
 
         new_amount = st.number_input("Yaklaşık materyal miktarı (kg)", min_value=0.0, value=float(st.session_state.material_amount), step=0.5)
 
+        new_odor = st.radio(
+            "Koku durumu",
+            ["Yok", "Hafif", "Belirgin"],
+            index=["Yok", "Hafif", "Belirgin"].index(st.session_state.odor_status),
+            horizontal=True,
+        )
+
         ef1, ef2 = st.columns([3, 1])
         with ef1:
             saved = st.form_submit_button("✓ Kaydet", type="primary", use_container_width=True)
@@ -897,6 +862,7 @@ def edit_compost_dialog():
             st.session_state.start_date = new_start
             st.session_state.last_turn_date = new_turn
             st.session_state.material_amount = new_amount
+            st.session_state.odor_status = new_odor
             st.session_state.goal_signature = ""
             st.rerun()
 
@@ -1035,7 +1001,7 @@ st.markdown(
   <div class="card-head">
     <div>
       <div class="card-title">My Compost</div>
-      <div class="card-sub">Kompost bilgilerini kaydet; takip ve AI analizi buna göre güncellensin.</div>
+      <div class="card-sub">Kompostunun gelişimini takip et ve bakım önerilerini kişiselleştir.</div>
     </div>
     <div class="icon-chip">{SPROUT_SVG}</div>
   </div>
@@ -1063,20 +1029,12 @@ st.markdown(
   <div class="journey-track">
     <div class="journey-fill" style="width:{rule_journey_pct}%"></div>
   </div>
-
-  <div class="history-card">
-    <div class="history-head">
-      <div class="history-title">Health History</div>
-      <div class="history-note">Son analizler</div>
-    </div>
-    {sparkline_html(st.session_state.history)}
-  </div>
 </div>
 """,
     unsafe_allow_html=True,
 )
 
-p1, p2, p3 = st.columns([1, 1, 1])
+p1, p2, p3, p4 = st.columns([1, 1, 1, 1])
 with p1:
     if st.button(compost_type, use_container_width=True, key="edit_type_pill"):
         edit_compost_dialog()
@@ -1085,6 +1043,9 @@ with p2:
         edit_compost_dialog()
 with p3:
     if st.button(f"Başlangıç: {start_date.strftime('%d.%m.%Y')}", use_container_width=True, key="edit_start_pill"):
+        edit_compost_dialog()
+with p4:
+    if st.button(f"Koku: {odor_status}", use_container_width=True, key="edit_odor_pill"):
         edit_compost_dialog()
 
 if st.button("📷 Kompostunu Analiz Et", type="primary", use_container_width=True, key="open_analysis_main"):
@@ -1112,7 +1073,7 @@ st.markdown(
     <div class="goal-title">Bu Haftanın Hedefleri</div>
     <div class="goal-progress">{goal_done_count}/{goal_total_count} tamamlandı</div>
   </div>
-  <div class="goal-sub">Hedefler AI analizi ve kompost bilgilerine göre güncellenir.</div>
+  <div class="goal-sub">Hedefler fotoğraf analizi, koku durumu ve çevirme takvimine göre güncellenir.</div>
 """,
     unsafe_allow_html=True,
 )
@@ -1145,4 +1106,4 @@ if goal_total_count > 0 and goal_done_count == goal_total_count:
 
 st.markdown("</div>", unsafe_allow_html=True)
 
-st.caption("Smart Compost Coach prototype · v20 interactive goals + results panel")
+st.caption("Smart Compost Coach prototype · v21 personalized weekly goals")
