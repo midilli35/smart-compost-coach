@@ -2,8 +2,12 @@ import streamlit as st
 import google.generativeai as genai
 from PIL import Image
 import json
-import math
+import re
+from datetime import date, timedelta
 
+# ─────────────────────────────────────────────
+# CONFIG
+# ─────────────────────────────────────────────
 genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
 
 st.set_page_config(
@@ -14,13 +18,12 @@ st.set_page_config(
 )
 
 # ─────────────────────────────────────────────
-# GLOBAL CSS
+# CSS
 # ─────────────────────────────────────────────
 st.markdown("""
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,600;1,400&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
 <style>
-/* ── Reset & Base ── */
 *, *::before, *::after { box-sizing: border-box; }
 
 :root {
@@ -34,177 +37,314 @@ st.markdown("""
   --pale-sage: #DBE5DA;
   --orange:    #E8650A;
   --orange-dk: #C8560A;
-  --dark:      #2A2A2A;
-  --mid:       #555555;
-  --light:     #888888;
+  --dark:      #242428;
+  --mid:       #5A5A66;
+  --light:     #8A8A98;
   --page-bg:   #F7F4EE;
+  --line:      #EDE8DC;
 }
 
-/* Page background */
 .stApp, .main, .block-container {
   background: var(--page-bg) !important;
-  font-family: 'DM Sans', sans-serif !important;
+  font-family: 'Plus Jakarta Sans', sans-serif !important;
 }
-
 .block-container {
-  padding-top: 1.5rem !important;
+  padding-top: 1.2rem !important;
   padding-bottom: 3rem !important;
-  max-width: 520px !important;
+  max-width: 540px !important;
 }
-
-/* Hide Streamlit chrome */
 header[data-testid="stHeader"] { display: none !important; }
-.stFileUploader label { display: none !important; }
 footer { display: none !important; }
+.stFileUploader label { display: none !important; }
+.stAlert { border-radius: 16px !important; }
 
-/* ── HERO CARD ── */
+/* Hero */
 .hero-card {
   background: linear-gradient(140deg, var(--cream) 0%, var(--mustard) 100%);
-  border-radius: 24px;
+  border-radius: 26px;
   padding: 22px 22px 18px;
-  margin-bottom: 20px;
+  margin-bottom: 16px;
   position: relative;
   overflow: hidden;
+  box-shadow: 0 10px 30px rgba(232,101,10,0.08);
 }
 .hero-pattern {
   position: absolute;
   top: 0; right: 0;
-  width: 140px; height: 100%;
-  opacity: 0.18;
+  width: 150px; height: 100%;
+  opacity: 0.16;
   pointer-events: none;
 }
 .hero-title {
-  font-family: 'Fraunces', serif;
-  font-size: 28px;
-  font-weight: 600;
+  font-size: 30px;
+  font-weight: 800;
+  letter-spacing: -0.04em;
   color: var(--dark);
-  line-height: 1.2;
+  line-height: 1.08;
   position: relative;
   z-index: 1;
 }
 .hero-sub {
   font-size: 13px;
   color: #666;
-  margin-top: 6px;
+  margin-top: 8px;
   position: relative;
   z-index: 1;
 }
 
-/* ── UPLOAD ZONE ── */
+/* Cards */
+.card {
+  background: white;
+  border-radius: 22px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  margin-bottom: 14px;
+  box-shadow: 0 8px 26px rgba(70,76,230,0.045);
+}
+.card-title {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--dark);
+  margin-bottom: 6px;
+  letter-spacing: -0.02em;
+}
+.card-sub {
+  font-size: 12px;
+  color: var(--mid);
+  line-height: 1.45;
+  margin-bottom: 12px;
+}
+
+/* Tracker */
+.tracker-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.tracker-mini {
+  background: #FFF7E6;
+  border-radius: 18px;
+  padding: 13px;
+  border: 1px solid #F2E2B8;
+}
+.tracker-mini.alt {
+  background: #F0F1FF;
+  border-color: #DADCFB;
+}
+.tracker-label {
+  font-size: 10px;
+  color: var(--light);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 700;
+}
+.tracker-value {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--dark);
+  line-height: 1.05;
+  margin-top: 3px;
+  letter-spacing: -0.04em;
+}
+.tracker-note {
+  font-size: 11px;
+  color: var(--mid);
+  margin-top: 4px;
+}
+
+/* Journey */
+.journey-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--light);
+  margin: 12px 0 10px;
+}
+.journey-step.active {
+  color: var(--royal);
+  font-weight: 800;
+}
+.journey-track {
+  height: 10px;
+  background: var(--mist);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.journey-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--peri), var(--royal));
+  border-radius: 999px;
+  transition: width 1s ease;
+}
+
+/* Check-in */
+.check-card {
+  background: #FFFDF7;
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  padding: 18px;
+  margin-bottom: 14px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.035);
+}
+.check-title {
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--dark);
+  margin-bottom: 4px;
+  letter-spacing: -0.02em;
+}
+.check-sub {
+  font-size: 12px;
+  color: var(--mid);
+  margin-bottom: 12px;
+}
+.success-note {
+  background: var(--mist);
+  border: 1px solid #DADCFB;
+  color: var(--royal);
+  border-radius: 18px;
+  padding: 14px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  margin-top: 10px;
+  box-shadow: 4px 4px 0 rgba(178,180,244,0.45);
+}
+.info-note {
+  background: #FFF7E6;
+  border: 1px solid #F2E2B8;
+  color: #7A5E20;
+  border-radius: 18px;
+  padding: 14px 16px;
+  font-size: 13px;
+  margin-top: 10px;
+}
+
+/* Buttons */
+div[data-testid="stButton"] > button {
+  width: 100% !important;
+  padding: 13px 18px !important;
+  border-radius: 999px !important;
+  font-family: 'Plus Jakarta Sans', sans-serif !important;
+  font-size: 14px !important;
+  font-weight: 800 !important;
+  border: 1.5px solid var(--royal) !important;
+  color: var(--royal) !important;
+  background: white !important;
+  transition: transform 0.12s ease, box-shadow 0.12s ease !important;
+  box-shadow: none !important;
+}
+div[data-testid="stButton"] > button:hover {
+  transform: translateY(-1px) !important;
+  box-shadow: 0 8px 18px rgba(70,76,230,0.12) !important;
+}
+div[data-testid="stButton"] > button[kind="primary"] {
+  background: var(--orange) !important;
+  color: white !important;
+  border-color: var(--orange) !important;
+}
+
+/* Upload */
 .upload-zone {
   border: 1.5px dashed #C8B88A;
   border-radius: 18px;
-  padding: 14px 14px;
-  text-align: left;
+  padding: 12px 14px;
   background: #FFFDF7;
   margin-bottom: 10px;
-  cursor: pointer;
 }
 .upload-title {
   font-size: 14px;
   color: var(--mid);
-  margin-top: 10px;
+  font-weight: 700;
 }
-.upload-title strong { color: var(--royal); }
 .upload-hint {
   font-size: 11px;
   color: #AAA;
-  margin-top: 4px;
+  margin-top: 3px;
+}
+.stFileUploader [data-testid="stFileUploaderDropzone"] {
+  background: #FFFDF7 !important;
+  border: 1.5px dashed #C8B88A !important;
+  border-radius: 18px !important;
+  min-height: 58px !important;
+  padding: 10px !important;
 }
 
-/* ── ANALYZE BUTTON ── */
-div[data-testid="stButton"] > button {
-  width: 100% !important;
-  padding: 15px 24px !important;
-  background: var(--orange) !important;
-  color: white !important;
-  border: none !important;
-  border-radius: 16px !important;
-  font-family: 'DM Sans', sans-serif !important;
-  font-size: 16px !important;
-  font-weight: 600 !important;
-  letter-spacing: 0.02em !important;
-  cursor: pointer !important;
-  transition: background 0.2s, transform 0.1s !important;
-  box-shadow: none !important;
-}
-div[data-testid="stButton"] > button:hover {
-  background: var(--orange-dk) !important;
-  transform: translateY(-1px) !important;
-  border: none !important;
-}
-div[data-testid="stButton"] > button:active {
-  transform: scale(0.98) !important;
-}
-
-/* ── HEALTH CARD ── */
+/* Health */
 .health-card {
   background: var(--mustard);
-  border-radius: 22px;
+  border-radius: 24px;
   padding: 20px;
-  margin-bottom: 16px;
+  margin-bottom: 14px;
   display: flex;
   align-items: center;
   gap: 18px;
+  box-shadow: 0 10px 24px rgba(232,101,10,0.08);
 }
 .health-text-block h4 {
   font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: #7A5E20;
-  font-weight: 600;
+  font-weight: 800;
   margin: 0;
 }
 .health-score-num {
-  font-family: 'Fraunces', serif;
   font-size: 52px;
+  font-weight: 800;
   color: var(--dark);
   line-height: 1;
   margin: 2px 0;
+  letter-spacing: -0.06em;
 }
 .health-score-num span {
   font-size: 20px;
   color: #7A5E20;
+  letter-spacing: -0.02em;
 }
 .health-status-label {
   font-size: 12px;
   color: #7A5E20;
-  font-weight: 500;
+  font-weight: 600;
 }
 
-/* ── METRIC CARDS ── */
+/* Metrics */
 .metrics-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 12px;
-  margin-bottom: 16px;
+  margin-bottom: 14px;
 }
 .metric-card {
   background: white;
-  border-radius: 16px;
-  padding: 14px 14px 12px;
-  border: 1px solid #EDE8DC;
+  border-radius: 18px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  box-shadow: 0 8px 22px rgba(70,76,230,0.04);
 }
 .metric-label {
-  font-size: 11px;
+  font-size: 10px;
   color: var(--light);
   text-transform: uppercase;
   letter-spacing: 0.06em;
+  font-weight: 700;
   margin-bottom: 4px;
 }
 .metric-value {
-  font-family: 'Fraunces', serif;
   font-size: 20px;
+  font-weight: 800;
   color: var(--dark);
+  letter-spacing: -0.04em;
 }
 
-/* ── MATURITY CARD ── */
+/* Maturity */
 .maturity-card {
   background: white;
-  border-radius: 18px;
+  border-radius: 20px;
   padding: 16px 18px;
-  margin-bottom: 16px;
-  border: 1px solid #EDE8DC;
+  margin-bottom: 14px;
+  border: 1px solid var(--line);
+  box-shadow: 0 8px 22px rgba(70,76,230,0.04);
 }
 .maturity-header {
   display: flex;
@@ -213,15 +353,16 @@ div[data-testid="stButton"] > button:active {
   margin-bottom: 10px;
 }
 .maturity-label {
-  font-size: 11px;
+  font-size: 10px;
   color: var(--light);
   text-transform: uppercase;
   letter-spacing: 0.06em;
+  font-weight: 700;
 }
 .maturity-value {
-  font-family: 'Fraunces', serif;
-  font-size: 15px;
+  font-size: 14px;
   color: var(--royal);
+  font-weight: 800;
 }
 .maturity-track {
   height: 8px;
@@ -246,12 +387,11 @@ div[data-testid="stButton"] > button:active {
   border-radius: 50%;
   background: var(--mist);
   display: inline-block;
-  flex-shrink: 0;
 }
 .mdot.filled { background: var(--peri); }
 .mdot.active { background: var(--royal); transform: scale(1.3); }
 
-/* ── SIDE-BY-SIDE PANELS ── */
+/* Summary cards */
 .panels-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -260,13 +400,11 @@ div[data-testid="stButton"] > button:active {
 }
 .panel-card {
   background: white;
-  border-radius: 16px;
-  border: 1px solid #EDE8DC;
+  border-radius: 18px;
+  border: 1px solid var(--line);
   overflow: hidden;
-  cursor: pointer;
-  transition: box-shadow 0.2s;
+  box-shadow: 0 10px 26px rgba(70,76,230,0.045);
 }
-.panel-card:hover { box-shadow: 0 4px 16px rgba(70,76,230,0.1); }
 .panel-header {
   padding: 12px 14px 10px;
   display: flex;
@@ -275,12 +413,12 @@ div[data-testid="stButton"] > button:active {
 }
 .panel-header.problems { border-bottom: 2px solid var(--cream); }
 .panel-header.recs { border-bottom: 2px solid var(--mist); }
-.panel-title { font-size: 12px; font-weight: 600; color: var(--dark); }
+.panel-title { font-size: 13px; font-weight: 800; color: var(--dark); }
 .panel-badge {
   margin-left: auto;
   font-size: 10px;
-  font-weight: 700;
-  padding: 2px 7px;
+  font-weight: 800;
+  padding: 2px 8px;
   border-radius: 99px;
 }
 .badge-amber { background: #FFF0C8; color: #9A6700; }
@@ -289,203 +427,119 @@ div[data-testid="stButton"] > button:active {
   padding: 8px 14px 12px;
   font-size: 12px;
   color: var(--mid);
-  line-height: 1.5;
+  line-height: 1.55;
 }
 .panel-item {
   display: flex;
   gap: 7px;
-  margin-bottom: 5px;
+  margin-bottom: 6px;
   align-items: flex-start;
-}
-
-/* ── EXPANDED DETAIL CARD ── */
-.detail-card {
-  background: white;
-  border-radius: 18px;
-  border: 2px solid var(--mist);
-  padding: 16px 18px;
-  margin-bottom: 12px;
-  box-shadow: 4px 4px 0 var(--mist);
-}
-.detail-title {
-  font-family: 'Fraunces', serif;
-  font-size: 15px;
-  color: var(--royal);
-  margin-bottom: 10px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.detail-item {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 8px;
-  align-items: flex-start;
-  font-size: 13px;
-  color: var(--mid);
-  line-height: 1.5;
-}
-.bullet-circle {
-  flex-shrink: 0;
-  width: 8px; height: 8px;
-  border-radius: 50%;
-  margin-top: 4px;
 }
 .bullet-tri {
   flex-shrink: 0;
-  margin-top: 4px;
+  margin-top: 5px;
   width: 0; height: 0;
   border-top: 5px solid transparent;
   border-bottom: 5px solid transparent;
   border-left: 8px solid;
 }
+.bullet-circle {
+  flex-shrink: 0;
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  margin-top: 5px;
+}
 
-/* ── PHOTO CARD ── */
+/* Bottom sheet simulation */
+.sheet-card {
+  background: white;
+  border-radius: 26px 26px 18px 18px;
+  border: 2px solid var(--mist);
+  padding: 18px 18px 16px;
+  margin: 14px 0;
+  box-shadow: 0 -6px 0 rgba(178,180,244,0.35), 0 18px 38px rgba(70,76,230,0.10);
+  animation: sheetUp 0.28s ease-out;
+}
+@keyframes sheetUp {
+  from { transform: translateY(28px); opacity: 0; }
+  to   { transform: translateY(0); opacity: 1; }
+}
+.sheet-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.sheet-title {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--royal);
+  letter-spacing: -0.03em;
+}
+.sheet-x {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: #F6F6FF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--royal);
+  font-weight: 800;
+}
+.sheet-item {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
+  align-items: flex-start;
+  font-size: 13px;
+  color: var(--mid);
+  line-height: 1.5;
+}
+.sheet-mini-grid {
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px;
+}
+.sheet-mini {
+  background:#F8F8FF;
+  border:1px solid var(--mist);
+  border-radius:16px;
+  padding:14px;
+}
+.sheet-mini-label {
+  font-size:10px;
+  color:var(--light);
+  text-transform:uppercase;
+  letter-spacing:.06em;
+  font-weight:700;
+}
+.sheet-mini-value {
+  font-size:18px;
+  color:var(--dark);
+  font-weight:800;
+  margin-top:4px;
+}
+
+/* Photo */
 .photo-card {
   background: white;
   border-radius: 18px;
-  border: 1px solid #EDE8DC;
+  border: 1px solid var(--line);
   overflow: hidden;
   margin-bottom: 12px;
 }
 .photo-card-header {
   padding: 12px 16px;
-  border-bottom: 1px solid #EDE8DC;
-  font-size: 12px;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--light);
-  font-weight: 600;
-}
-
-
-/* ── JOURNEY + CHECK-IN ── */
-.journey-card {
-  background: white;
-  border-radius: 18px;
-  padding: 18px;
-  border: 1px solid #EDE8DC;
-  margin-bottom: 16px;
-}
-.journey-title {
-  font-family: 'Fraunces', serif;
-  font-size: 16px;
-  color: var(--dark);
-  margin-bottom: 12px;
-}
-.journey-row {
-  display: flex;
-  justify-content: space-between;
-  font-size: 12px;
-  margin-bottom: 12px;
-  color: var(--light);
-}
-.journey-step.active {
-  color: var(--royal);
-  font-weight: 700;
-}
-.journey-track {
-  height: 10px;
-  background: var(--mist);
-  border-radius: 999px;
-  overflow: hidden;
-}
-.journey-fill {
-  height: 100%;
-  background: linear-gradient(90deg, var(--peri), var(--royal));
-  border-radius: 999px;
-  transition: width 1s ease;
-}
-.check-card {
-  background: #FFFDF7;
-  border: 1px solid #EDE8DC;
-  border-radius: 18px;
-  padding: 16px 18px;
-  margin-bottom: 16px;
-}
-.check-title {
-  font-family: 'Fraunces', serif;
-  font-size: 16px;
-  color: var(--dark);
-  margin-bottom: 4px;
-}
-.check-sub {
-  font-size: 12px;
-  color: var(--mid);
-  margin-bottom: 10px;
-}
-
-
-/* ── ALWAYS VISIBLE DASHBOARD ── */
-.welcome-card {
-  background: white;
-  border-radius: 22px;
-  padding: 18px;
-  border: 1px solid #EDE8DC;
-  margin-bottom: 16px;
-}
-.welcome-title {
-  font-family: 'Fraunces', serif;
-  font-size: 22px;
-  color: var(--dark);
-  margin-bottom: 4px;
-}
-.welcome-sub {
-  font-size: 13px;
-  color: var(--mid);
-  margin-bottom: 14px;
-}
-.tracker-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-  margin-bottom: 14px;
-}
-.tracker-mini {
-  background: #FFF7E6;
-  border-radius: 15px;
-  padding: 12px;
-  border: 1px solid #F2E2B8;
-}
-.tracker-mini.green {
-  background: #EEF5EE;
-  border-color: #D7E5D6;
-}
-.tracker-label {
-  font-size: 10px;
-  color: var(--light);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-}
-.tracker-value {
-  font-family: 'Fraunces', serif;
-  font-size: 24px;
-  color: var(--dark);
-  line-height: 1.1;
-}
-.tracker-note {
+  border-bottom: 1px solid var(--line);
   font-size: 11px;
-  color: var(--mid);
-  margin-top: 3px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--light);
+  font-weight: 800;
 }
-
-/* ── FILE UPLOADER STYLE ── */
-.stFileUploader [data-testid="stFileUploaderDropzone"] {
-  background: #FFFDF7 !important;
-  border: 1.5px dashed #C8B88A !important;
-  border-radius: 18px !important;
-  min-height: 58px !important;
-  padding: 10px !important;
-}
-
-/* Hide default streamlit metrics label formatting */
-[data-testid="stMetricLabel"] { display: none !important; }
-
-/* Warning / error */
-.stAlert { border-radius: 12px !important; }
 </style>
 """, unsafe_allow_html=True)
-
 
 # ─────────────────────────────────────────────
 # SVG ILLUSTRATIONS
@@ -512,16 +566,6 @@ HERO_PATTERN = """
   <path d="M120 70 L130 70 M125 65 L125 75" stroke="#7A5E20" stroke-width="1"/>
 </svg>"""
 
-UPLOAD_SVG = """
-<svg viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:52px;height:52px;margin:0 auto 10px">
-  <circle cx="26" cy="26" r="24" fill="#FFF0CC"/>
-  <path d="M18 30 Q14 30 13 26 Q12 20 17 19 Q17 13 22 12 Q27 11 29 16 Q34 15 35 19 Q39 19 39 24 Q39 30 34 30"
-        stroke="#C8A020" stroke-width="1.5" fill="none" stroke-linecap="round"/>
-  <path d="M22 34 L26 28 L30 34" stroke="#C8A020" stroke-width="1.5"
-        stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-  <line x1="26" y1="28" x2="26" y2="40" stroke="#C8A020" stroke-width="1.5" stroke-linecap="round"/>
-</svg>"""
-
 WORM_SVG = """
 <svg viewBox="0 0 72 72" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:72px;height:72px;flex-shrink:0">
   <circle cx="36" cy="36" r="32" fill="#FFE9BD"/>
@@ -534,16 +578,12 @@ WORM_SVG = """
   <path d="M48 47 L48 38" stroke="#5A8A40" stroke-width="1.5" stroke-linecap="round"/>
   <path d="M48 41 Q44 38 43 34 Q47 33 49 37Z" fill="#7ABD5A"/>
   <path d="M48 44 Q52 41 53 37 Q49 36 47 40Z" fill="#5A8A40"/>
-  <circle cx="24" cy="38" r="1.5" fill="#D4A020" opacity="0.6"/>
-  <circle cx="58" cy="42" r="1" fill="#7ABD5A" opacity="0.7"/>
-  <circle cx="16" cy="44" r="1" fill="#E86040" opacity="0.5"/>
 </svg>"""
 
 MOISTURE_SVG = """
 <svg viewBox="0 0 26 26" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:26px;height:26px;margin-bottom:6px">
   <path d="M13 4 Q10 8 8 12 Q6 16 8 20 Q10 24 13 24 Q16 24 18 20 Q20 16 18 12 Q16 8 13 4Z"
         fill="#B2D4F4" stroke="#464CE6" stroke-width="1.2"/>
-  <path d="M10 18 Q12 22 13 22" stroke="white" stroke-width="1" stroke-linecap="round" opacity="0.8"/>
 </svg>"""
 
 BALANCE_SVG = """
@@ -564,31 +604,22 @@ CHECK_SVG = """<svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/200
   <path d="M5 8 L7 10 L11 6" stroke="#7C80ED" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>"""
 
-
 # ─────────────────────────────────────────────
 # HELPERS
 # ─────────────────────────────────────────────
 
-
-def journey_state(score):
-    """Return stage label and progress percentage based on health score."""
-    if score < 40:
-        return "Başlangıç", 25
-    if score < 70:
-        return "Aktif", 50
-    if score < 90:
-        return "Olgunlaşma", 75
-    return "Hazır", 100
-
 def score_label(score):
-    if score >= 80: return "Mükemmel — Neredeyse Hazır"
-    if score >= 60: return "Orta — Geliştirilmeli"
-    if score >= 40: return "Zayıf — Dikkat Gerekli"
+    if score >= 80:
+        return "Mükemmel — Neredeyse Hazır"
+    if score >= 60:
+        return "Orta — Geliştirilmeli"
+    if score >= 40:
+        return "Zayıf — Dikkat Gerekli"
     return "Kritik — Hemen Müdahale"
 
+
 def parse_months(ready_in_str):
-    """Extract a rough 0-1 progress from ready_in text."""
-    text = ready_in_str.lower()
+    text = ready_in_str.lower().replace("-", " ")
     nums = [int(s) for s in text.split() if s.isdigit()]
     if nums:
         low = nums[0]
@@ -597,6 +628,7 @@ def parse_months(ready_in_str):
         progress = max(0.05, min(0.95, 1 - (avg / 12)))
         return progress, avg
     return 0.3, 4
+
 
 def dots_html(progress, total=20):
     filled = max(1, round(progress * total))
@@ -610,90 +642,182 @@ def dots_html(progress, total=20):
             dots.append('<span class="mdot"></span>')
     return "".join(dots)
 
-def tri(color): 
+
+def tri(color):
     return f'<span class="bullet-tri" style="border-left-color:{color}"></span>'
+
 
 def circle(color):
     return f'<span class="bullet-circle" style="background:{color}"></span>'
 
+
+def turning_interval_days(compost_type):
+    if "Sıcak" in compost_type:
+        return 3
+    if "Bahçe" in compost_type:
+        return 7
+    return 10
+
+
+def turning_message(days_until):
+    if days_until < 0:
+        return f"{abs(days_until)} gün gecikti"
+    if days_until == 0:
+        return "Bugün"
+    if days_until == 1:
+        return "Yarın"
+    return f"{days_until} gün sonra"
+
+
+def journey_from_age(age_days, compost_type):
+    total_days = 90 if "Sıcak" in compost_type else 180
+    pct = max(8, min(95, int((age_days / total_days) * 100)))
+    if pct < 25:
+        stage = "Başlangıç"
+    elif pct < 65:
+        stage = "Aktif"
+    elif pct < 90:
+        stage = "Olgunlaşma"
+    else:
+        stage = "Hazır"
+    return stage, pct
+
+
+def make_short_label(text, max_words=3):
+    words = re.sub(r"[.!?]", "", str(text)).split()
+    return " ".join(words[:max_words])
+
 PALETTE = ["#464CE6", "#7C80ED", "#B2B4F4"]
 
+# ─────────────────────────────────────────────
+# SESSION STATE
+# ─────────────────────────────────────────────
+if "sheet" not in st.session_state:
+    st.session_state.sheet = None
+if "care_done" not in st.session_state:
+    st.session_state.care_done = False
 
 # ─────────────────────────────────────────────
-# PAGE: HERO
+# HERO
 # ─────────────────────────────────────────────
 st.markdown(f"""
 <div class="hero-card">
   {HERO_PATTERN}
   <div style="position:relative;z-index:1">
     {HERO_SVG}
-    <div class="hero-title">Smart Compost<br><em>Coach</em></div>
-    <div class="hero-sub">Fotoğrafını yükle, kompostunu analiz et.</div>
+    <div class="hero-title">Smart Compost<br>Coach</div>
+    <div class="hero-sub">Kompostunu takip et, fotoğrafla analiz et.</div>
   </div>
 </div>
 """, unsafe_allow_html=True)
 
 # ─────────────────────────────────────────────
-# PAGE: ALWAYS VISIBLE TRACKER
+# USER / RULE-BASED INPUTS
 # ─────────────────────────────────────────────
-st.markdown("""
-<div class="welcome-card">
-  <div class="welcome-title">Merhaba 🌱</div>
-  <div class="welcome-sub">Bugün kompostunu takip etmek için küçük bir adım yeterli.</div>
+with st.expander("⚙️ Kompost bilgileri", expanded=True):
+    today = date.today()
+    default_start = today - timedelta(days=22)
+    default_turn = today - timedelta(days=3)
+
+    compost_type = st.selectbox(
+        "Kompost tipi",
+        ["Ev tipi / soğuk kompost", "Bahçe tipi / soğuk kompost", "Sıcak kompost"],
+        index=0
+    )
+
+    c1, c2 = st.columns(2)
+    with c1:
+        start_date = st.date_input("Başlangıç tarihi", value=default_start)
+    with c2:
+        last_turn_date = st.date_input("Son çevirme tarihi", value=default_turn)
+
+    material_amount = st.number_input(
+        "Yaklaşık materyal miktarı (kg)",
+        min_value=0.0,
+        value=2.0,
+        step=0.5
+    )
+
+age_days = max(0, (date.today() - start_date).days)
+interval = turning_interval_days(compost_type)
+days_since_turn = max(0, (date.today() - last_turn_date).days)
+next_turn_date = last_turn_date + timedelta(days=interval)
+days_until_turn = (next_turn_date - date.today()).days
+turn_label = turning_message(days_until_turn)
+rule_stage, rule_journey_pct = journey_from_age(age_days, compost_type)
+
+# ─────────────────────────────────────────────
+# ALWAYS VISIBLE TRACKER
+# ─────────────────────────────────────────────
+st.markdown(f"""
+<div class="card">
+  <div class="card-title">Merhaba 🌱</div>
+  <div class="card-sub">Bugün kompostunu takip etmek için küçük bir adım yeterli.</div>
 
   <div class="tracker-grid">
     <div class="tracker-mini">
       <div class="tracker-label">Kompost Yaşı</div>
-      <div class="tracker-value">22 gün</div>
-      <div class="tracker-note">Aktif ayrışma dönemi</div>
+      <div class="tracker-value">{age_days} gün</div>
+      <div class="tracker-note">{rule_stage} dönemi</div>
     </div>
-    <div class="tracker-mini green">
-      <div class="tracker-label">Sonraki Görev</div>
-      <div class="tracker-value">Çevir</div>
-      <div class="tracker-note">Bugün veya yarın</div>
+    <div class="tracker-mini alt">
+      <div class="tracker-label">Sonraki Çevirme</div>
+      <div class="tracker-value">{turn_label}</div>
+      <div class="tracker-note">Son çevirme: {days_since_turn} gün önce</div>
     </div>
   </div>
 
-  <div class="journey-title">🌱 Compost Journey</div>
+  <div class="card-title" style="font-size:15px;margin-top:4px;">Compost Journey</div>
   <div class="journey-row">
-    <span>🌱 Başlangıç</span>
-    <span class="journey-step active">🪱 Aktif</span>
-    <span>🌿 Olgunlaşma</span>
-    <span>✅ Hazır</span>
+    <span class="journey-step {'active' if rule_stage == 'Başlangıç' else ''}">Başlangıç</span>
+    <span class="journey-step {'active' if rule_stage == 'Aktif' else ''}">Aktif</span>
+    <span class="journey-step {'active' if rule_stage == 'Olgunlaşma' else ''}">Olgunlaşma</span>
+    <span class="journey-step {'active' if rule_stage == 'Hazır' else ''}">Hazır</span>
   </div>
   <div class="journey-track">
-    <div class="journey-fill" style="width:50%"></div>
+    <div class="journey-fill" style="width:{rule_journey_pct}%"></div>
   </div>
 </div>
 """, unsafe_allow_html=True)
 
 st.markdown("""
 <div class="check-card">
-  <div class="check-title">✅ Günlük Kontrol</div>
-  <div class="check-sub">Bugün kompostu çevirdin mi?</div>
+  <div class="check-title">Günlük Kontrol</div>
+  <div class="check-sub">Bugün kompostu havalandırdın mı?</div>
 </div>
 """, unsafe_allow_html=True)
 
-turned_today_global = st.radio(
-    "Günlük kontrol",
-    ["Henüz Değil", "Evet"],
-    horizontal=True,
-    label_visibility="collapsed",
-    key="daily_checkin"
-)
+b1, b2 = st.columns(2)
+with b1:
+    later_clicked = st.button("Daha Sonra", use_container_width=True)
+with b2:
+    done_clicked = st.button("✓ Çevirdim", use_container_width=True)
 
-if turned_today_global == "Evet":
-    st.success("Harika! Kompostun daha sağlıklı hale geliyor 🌱")
+if done_clicked:
+    st.session_state.care_done = True
     st.balloons()
+if later_clicked:
+    st.session_state.care_done = False
+
+if st.session_state.care_done:
+    st.markdown("""
+<div class="success-note">
+  Güzel iş! Bugünkü bakım tamamlandı. Kompostun bugün biraz daha nefes aldı.
+</div>
+""", unsafe_allow_html=True)
 else:
-    st.info("Kompostu çevirmek havalanmayı artırır ve ayrışmayı hızlandırır.")
+    st.markdown("""
+<div class="info-note">
+  Havalandırma, ayrışmayı hızlandırır ve kötü koku riskini azaltır.
+</div>
+""", unsafe_allow_html=True)
 
 # ─────────────────────────────────────────────
-# PAGE: UPLOAD SECTION
+# UPLOAD / AI SECTION
 # ─────────────────────────────────────────────
 st.markdown("""
 <div class="upload-zone">
-  <div class="upload-title"><strong>📷 Yeni analiz yap</strong></div>
+  <div class="upload-title">📷 Yeni analiz yap</div>
   <div class="upload-hint">Fotoğraf seç veya sürükle bırak • JPG, PNG</div>
 </div>
 """, unsafe_allow_html=True)
@@ -704,44 +828,57 @@ uploaded_file = st.file_uploader(
     label_visibility="collapsed"
 )
 
-if st.button("🔍  Kompostu Analiz Et"):
+if st.button("🔍 Kompostu Analiz Et", type="primary"):
     if uploaded_file is None:
         st.warning("Lütfen önce bir kompost fotoğrafı yükleyin.")
     else:
         image = Image.open(uploaded_file)
         model = genai.GenerativeModel("gemini-2.5-flash")
 
-        prompt = """
-Analyze the compost image and return ONLY valid JSON with this exact structure:
-{
+        prompt = f"""
+Analyze the compost image and the user's compost tracking data.
+Return ONLY valid JSON with this exact structure:
+{{
   "health_score": 0,
   "moisture": "",
   "balance": "",
   "ready_in": "",
   "problems": [],
   "recommendations": []
-}
+}}
+
+User tracking data:
+- Compost type: {compost_type}
+- Start date: {start_date}
+- Compost age: {age_days} days
+- Last turning date: {last_turn_date}
+- Days since last turning: {days_since_turn}
+- Approximate material amount: {material_amount} kg
+
 Rules:
 * health_score: integer 0-100
 * moisture: one of — Kuru, Optimal, Islak
 * balance: one of — Karbon Fazla, Dengeli, Azot Fazla
 * ready_in: short Turkish time estimate e.g. "3-6 ay"
-* max 2 problems (in Turkish)
-* max 3 recommendations (in Turkish)
+* problems: max 2 items, each max 3 words, in Turkish
+* recommendations: max 3 items, each max 3 words, in Turkish
 * no explanation outside JSON
 """
 
         with st.spinner("Kompostun analiz ediliyor..."):
             try:
                 response = model.generate_content([prompt, image])
-                clean = response.text.strip().replace("```json","").replace("```","")
+                clean = response.text.strip().replace("```json", "").replace("```", "")
                 data = json.loads(clean)
 
                 score = data["health_score"]
-                progress, avg_months = parse_months(data.get("ready_in","4 ay"))
+                progress, avg_months = parse_months(data.get("ready_in", "4 ay"))
                 bar_pct = int(progress * 100)
 
-                # ── HEALTH CARD ──
+                probs = data.get("problems", [])
+                recs = data.get("recommendations", [])
+
+                # HEALTH
                 st.markdown(f"""
 <div class="health-card">
   {WORM_SVG}
@@ -753,7 +890,7 @@ Rules:
 </div>
 """, unsafe_allow_html=True)
 
-                # ── METRICS ──
+                # METRICS
                 st.markdown(f"""
 <div class="metrics-grid">
   <div class="metric-card">
@@ -769,7 +906,7 @@ Rules:
 </div>
 """, unsafe_allow_html=True)
 
-                # ── MATURITY BAR ──
+                # MATURITY
                 st.markdown(f"""
 <div class="maturity-card">
   <div class="maturity-header">
@@ -783,16 +920,13 @@ Rules:
 </div>
 """, unsafe_allow_html=True)
 
-                # ── SIDE-BY-SIDE PANELS ──
-                probs = data.get("problems", [])
-                recs  = data.get("recommendations", [])
-
+                # SUMMARY CARDS
                 prob_items = "".join([
-                    f'<div class="panel-item">{tri("#E8A020")}<span>{p}</span></div>'
+                    f'<div class="panel-item">{tri("#E8A020")}<span>{make_short_label(p)}</span></div>'
                     for p in probs[:2]
                 ])
                 rec_items = "".join([
-                    f'<div class="panel-item">{tri("#7C80ED")}<span>{r}</span></div>'
+                    f'<div class="panel-item">{tri("#7C80ED")}<span>{make_short_label(r)}</span></div>'
                     for r in recs[:2]
                 ])
 
@@ -817,45 +951,96 @@ Rules:
 </div>
 """, unsafe_allow_html=True)
 
-                # ── EXPANDED: ALL PROBLEMS ──
-                if probs:
-                    items_html = "".join([
-                        f'<div class="detail-item">{circle(["#E8A020","#FFB84D"][i%2])}<span>{p}</span></div>'
-                        for i, p in enumerate(probs)
-                    ])
+                # DETAIL SELECTORS
+                s1, s2, s3, s4 = st.columns(4)
+                with s1:
+                    if st.button("Sorunlar", use_container_width=True):
+                        st.session_state.sheet = "problems"
+                with s2:
+                    if st.button("Öneriler", use_container_width=True):
+                        st.session_state.sheet = "recommendations"
+                with s3:
+                    if st.button("Durum", use_container_width=True):
+                        st.session_state.sheet = "status"
+                with s4:
+                    if st.button("Fotoğraf", use_container_width=True):
+                        st.session_state.sheet = "photo"
+
+                if st.session_state.sheet:
+                    close_clicked = st.button("× Kapat", use_container_width=True)
+                    if close_clicked:
+                        st.session_state.sheet = None
+                        st.rerun()
+
+                # BOTTOM SHEET SIMULATION
+                if st.session_state.sheet == "problems":
+                    items = "".join([
+                        f'<div class="sheet-item">{circle("#E8A020")}<span>{p}</span></div>'
+                        for p in probs
+                    ]) or '<div class="sheet-item"><span>Belirgin sorun yok.</span></div>'
                     st.markdown(f"""
-<div class="detail-card">
-  <div class="detail-title">
-    {WARNING_SVG}
-    Olası Sorunlar
+<div class="sheet-card">
+  <div class="sheet-head">
+    <div class="sheet-title">Sorunlar</div>
+    <div class="sheet-x">×</div>
   </div>
-  {items_html}
+  {items}
 </div>
 """, unsafe_allow_html=True)
 
-                # ── EXPANDED: ALL RECS ──
-                if recs:
-                    items_html = "".join([
-                        f'<div class="detail-item">{circle(PALETTE[i%3])}<span>{r}</span></div>'
+                elif st.session_state.sheet == "recommendations":
+                    items = "".join([
+                        f'<div class="sheet-item">{circle(PALETTE[i % 3])}<span>{r}</span></div>'
                         for i, r in enumerate(recs)
-                    ])
+                    ]) or '<div class="sheet-item"><span>Öneri bulunamadı.</span></div>'
                     st.markdown(f"""
-<div class="detail-card">
-  <div class="detail-title">
-    {CHECK_SVG}
-    Öneriler
+<div class="sheet-card">
+  <div class="sheet-head">
+    <div class="sheet-title">Öneriler</div>
+    <div class="sheet-x">×</div>
   </div>
-  {items_html}
+  {items}
 </div>
 """, unsafe_allow_html=True)
 
-                # ── UPLOADED PHOTO ──
-                st.markdown("""
-<div class="photo-card">
-  <div class="photo-card-header">Yüklenen Fotoğraf</div>
+                elif st.session_state.sheet == "status":
+                    st.markdown(f"""
+<div class="sheet-card">
+  <div class="sheet-head">
+    <div class="sheet-title">Kompost Durumu</div>
+    <div class="sheet-x">×</div>
+  </div>
+  <div class="sheet-mini-grid">
+    <div class="sheet-mini">
+      <div class="sheet-mini-label">Nem</div>
+      <div class="sheet-mini-value">{data["moisture"]}</div>
+    </div>
+    <div class="sheet-mini">
+      <div class="sheet-mini-label">C/N Dengesi</div>
+      <div class="sheet-mini-value">{data["balance"]}</div>
+    </div>
+    <div class="sheet-mini">
+      <div class="sheet-mini-label">Kompost Yaşı</div>
+      <div class="sheet-mini-value">{age_days} gün</div>
+    </div>
+    <div class="sheet-mini">
+      <div class="sheet-mini-label">Sonraki Çevirme</div>
+      <div class="sheet-mini-value">{turn_label}</div>
+    </div>
+  </div>
+</div>
 """, unsafe_allow_html=True)
-                st.image(image, use_container_width=True)
-                st.markdown("</div>", unsafe_allow_html=True)
+
+                elif st.session_state.sheet == "photo":
+                    st.markdown("""
+<div class="sheet-card">
+  <div class="sheet-head">
+    <div class="sheet-title">Yüklenen Fotoğraf</div>
+    <div class="sheet-x">×</div>
+  </div>
+</div>
+""", unsafe_allow_html=True)
+                    st.image(image, use_container_width=True)
 
             except Exception as e:
                 st.error(f"Analiz sırasında hata oluştu: {e}")
