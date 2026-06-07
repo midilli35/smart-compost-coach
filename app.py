@@ -18,6 +18,119 @@ st.set_page_config(
 )
 
 # ─────────────────────────────────────────────
+# OVERLAY HELPER  — injects a true fixed overlay via parent document
+# ─────────────────────────────────────────────
+def inject_overlay_styles():
+    """Inject global overlay CSS into the parent page once."""
+    st.markdown("""
+<style>
+/* ── Overlay backdrop injected into parent document by JS ── */
+#scc-overlay-backdrop {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 99999 !important;
+  background: rgba(18,18,38,0.55) !important;
+  backdrop-filter: blur(7px) !important;
+  -webkit-backdrop-filter: blur(7px) !important;
+  display: flex !important;
+  align-items: flex-start !important;
+  justify-content: center !important;
+  padding-top: 52px !important;
+  padding-left: 16px !important;
+  padding-right: 16px !important;
+  animation: sccFadeIn 0.18s ease !important;
+}
+@keyframes sccFadeIn { from{opacity:0} to{opacity:1} }
+#scc-overlay-backdrop .scc-modal-box {
+  background: white;
+  border-radius: 28px;
+  border: 2px solid #E8E8FC;
+  padding: 24px 20px 28px;
+  width: 100%;
+  max-width: 460px;
+  max-height: 82vh;
+  overflow-y: auto;
+  box-shadow: 0 32px 80px rgba(18,18,60,0.30), 0 0 0 1px rgba(178,180,244,0.2);
+  animation: sccSlideIn 0.22s cubic-bezier(0.34,1.4,0.64,1);
+  position: relative;
+}
+@keyframes sccSlideIn {
+  from { opacity:0; transform: translateY(20px) scale(0.96); }
+  to   { opacity:1; transform: translateY(0) scale(1); }
+}
+#scc-overlay-backdrop .scc-modal-box.edit-modal {
+  border-color: #FFE9BD;
+  box-shadow: 0 32px 80px rgba(28,20,0,0.22), 0 0 0 1px rgba(255,213,128,0.3);
+}
+#scc-overlay-backdrop .scc-modal-title {
+  font-size: 19px;
+  font-weight: 800;
+  color: #464CE6;
+  letter-spacing: -0.03em;
+  margin-bottom: 16px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+}
+#scc-overlay-backdrop .scc-upload-zone {
+  border: 1.5px dashed #C8B88A;
+  border-radius: 18px;
+  padding: 12px 14px;
+  background: #FFFDF7;
+  margin-bottom: 12px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+}
+#scc-overlay-backdrop .scc-upload-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #5A5A66;
+}
+#scc-overlay-backdrop .scc-upload-hint {
+  font-size: 11px;
+  color: #AAA;
+  margin-top: 3px;
+}
+</style>
+""", unsafe_allow_html=True)
+
+
+def show_overlay(modal_id: str, title: str, content_html: str, edit_style: bool = False):
+    """Render a fixed overlay via JS appended to parent document body."""
+    modal_class = "scc-modal-box edit-modal" if edit_style else "scc-modal-box"
+    st.markdown(f"""
+<script>
+(function(){{
+  // Remove any existing overlay
+  var old = document.getElementById('scc-overlay-backdrop');
+  if(old) old.remove();
+
+  var backdrop = document.createElement('div');
+  backdrop.id = 'scc-overlay-backdrop';
+
+  var box = document.createElement('div');
+  box.className = '{modal_class}';
+
+  var title = document.createElement('div');
+  title.className = 'scc-modal-title';
+  title.innerHTML = '{title}';
+  box.appendChild(title);
+
+  box.innerHTML += `{content_html}`;
+  backdrop.appendChild(box);
+  document.body.appendChild(backdrop);
+}})();
+</script>
+""", unsafe_allow_html=True)
+
+
+def remove_overlay():
+    st.markdown("""
+<script>
+var old = document.getElementById('scc-overlay-backdrop');
+if(old) old.remove();
+</script>
+""", unsafe_allow_html=True)
+
+
+# ─────────────────────────────────────────────
 # CSS
 # ─────────────────────────────────────────────
 st.markdown("""
@@ -58,24 +171,83 @@ footer { display: none !important; }
 .stAlert { border-radius: 16px !important; }
 .stFileUploader label { display: none !important; }
 
-/* Allow fixed positioning to work inside Streamlit */
-.stApp > iframe, [data-testid="stAppViewContainer"] {
-  overflow: visible !important;
+/* When a modal is open, blur the main content */
+.stApp.modal-open > div {
+  filter: blur(4px);
+  pointer-events: none;
 }
 
-/* Pill buttons — force equal height & font size so all 3 are identical */
+/* ── Pill buttons — all equal height ── */
 div[data-testid="stHorizontalBlock"] div[data-testid="stButton"] > button {
   height: 44px !important;
   min-height: 44px !important;
   max-height: 44px !important;
-  font-size: 12px !important;
-  padding: 0 8px !important;
+  font-size: 11.5px !important;
+  padding: 0 6px !important;
   white-space: nowrap !important;
   overflow: hidden !important;
   text-overflow: ellipsis !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
+}
+
+/* Modal overlay — lives inside Streamlit flow but styled as fixed layer */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 99998;
+  background: rgba(18, 18, 38, 0.55);
+  backdrop-filter: blur(7px);
+  -webkit-backdrop-filter: blur(7px);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 52px 16px 24px;
+  animation: mbFadeIn 0.18s ease;
+}
+@keyframes mbFadeIn { from{opacity:0} to{opacity:1} }
+
+.modal-card {
+  background: white;
+  border-radius: 28px;
+  border: 2px solid var(--mist);
+  padding: 24px 20px 28px;
+  width: 100%;
+  max-width: 460px;
+  box-shadow: 0 32px 80px rgba(18,18,60,0.28), 0 0 0 1px rgba(178,180,244,0.18);
+  animation: mcSlideIn 0.22s cubic-bezier(0.34,1.4,0.64,1);
+  position: relative;
+}
+.modal-card.edit-variant {
+  border-color: var(--cream);
+  box-shadow: 0 32px 80px rgba(28,20,0,0.20), 0 0 0 1px rgba(255,213,128,0.28);
+}
+@keyframes mcSlideIn {
+  from { opacity:0; transform: translateY(18px) scale(0.96); }
+  to   { opacity:1; transform: translateY(0) scale(1); }
+}
+.modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+.modal-title {
+  font-size: 19px;
+  font-weight: 800;
+  color: var(--royal);
+  letter-spacing: -0.03em;
+}
+.modal-x {
+  width: 34px; height: 34px;
+  border-radius: 50%;
+  background: var(--mist);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px; font-weight: 800;
+  color: var(--royal);
+  cursor: pointer;
+  flex-shrink: 0;
 }
 
 /* Hero */
@@ -121,9 +293,7 @@ div[data-testid="stHorizontalBlock"] div[data-testid="stButton"] > button {
   margin-bottom: 14px;
   box-shadow: 0 8px 26px rgba(70,76,230,0.045);
 }
-.card.soft {
-  background: #FFFDF7;
-}
+.card.soft { background: #FFFDF7; }
 .card-title {
   font-size: 16px;
   font-weight: 800;
@@ -145,13 +315,10 @@ div[data-testid="stHorizontalBlock"] div[data-testid="stButton"] > button {
   margin-bottom:10px;
 }
 .icon-chip {
-  width: 42px;
-  height: 42px;
+  width: 42px; height: 42px;
   border-radius: 50%;
   background: var(--cream);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: flex; align-items: center; justify-content: center;
   flex-shrink: 0;
 }
 
@@ -195,10 +362,7 @@ div[data-testid="stHorizontalBlock"] div[data-testid="stButton"] > button {
   margin-top: 6px;
 }
 .meta-row {
-  display:flex;
-  flex-wrap:wrap;
-  gap:8px;
-  margin-top:12px;
+  display:flex; flex-wrap:wrap; gap:8px; margin-top:12px;
 }
 .meta-pill {
   background:#F8F6EF;
@@ -218,10 +382,7 @@ div[data-testid="stHorizontalBlock"] div[data-testid="stButton"] > button {
   color: var(--light);
   margin: 12px 0 10px;
 }
-.journey-step.active {
-  color: var(--royal);
-  font-weight: 800;
-}
+.journey-step.active { color: var(--royal); font-weight: 800; }
 .journey-track {
   height: 10px;
   background: var(--mist);
@@ -244,18 +405,8 @@ div[data-testid="stHorizontalBlock"] div[data-testid="stButton"] > button {
   margin-bottom: 14px;
   box-shadow: 0 8px 24px rgba(0,0,0,0.035);
 }
-.check-title {
-  font-size: 17px;
-  font-weight: 800;
-  color: var(--dark);
-  margin-bottom: 4px;
-  letter-spacing: -0.02em;
-}
-.check-sub {
-  font-size: 12px;
-  color: var(--mid);
-  margin-bottom: 12px;
-}
+.check-title { font-size: 17px; font-weight: 800; color: var(--dark); margin-bottom: 4px; letter-spacing: -0.02em; }
+.check-sub { font-size: 12px; color: var(--mid); margin-bottom: 12px; }
 .success-note {
   background: var(--mist);
   border: 1px solid #DADCFB;
@@ -311,16 +462,8 @@ div[data-testid="stButton"] > button[kind="primary"] {
   background: #FFFDF7;
   margin-bottom: 10px;
 }
-.upload-title {
-  font-size: 14px;
-  color: var(--mid);
-  font-weight: 800;
-}
-.upload-hint {
-  font-size: 11px;
-  color: #AAA;
-  margin-top: 3px;
-}
+.upload-title { font-size: 14px; font-weight: 700; color: var(--mid); }
+.upload-hint { font-size: 11px; color: #AAA; margin-top: 3px; }
 .stFileUploader [data-testid="stFileUploaderDropzone"] {
   background: #FFFDF7 !important;
   border: 1.5px dashed #C8B88A !important;
@@ -341,185 +484,77 @@ div[data-testid="stButton"] > button[kind="primary"] {
   box-shadow: 0 10px 24px rgba(232,101,10,0.08);
 }
 .health-icon-small {
-  width:56px;
-  height:56px;
+  width:56px; height:56px;
   border-radius:50%;
   background:#FFE9BD;
-  display:flex;
-  align-items:center;
-  justify-content:center;
+  display:flex; align-items:center; justify-content:center;
   flex-shrink:0;
 }
 .health-text-block h4 {
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: #7A5E20;
-  font-weight: 800;
-  margin: 0;
+  font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em;
+  color: #7A5E20; font-weight: 800; margin: 0;
 }
 .health-score-num {
-  font-size: 52px;
-  font-weight: 800;
-  color: var(--dark);
-  line-height: 1;
-  margin: 2px 0;
-  letter-spacing: -0.06em;
+  font-size: 52px; font-weight: 800; color: var(--dark);
+  line-height: 1; margin: 2px 0; letter-spacing: -0.06em;
 }
-.health-score-num span {
-  font-size: 20px;
-  color: #7A5E20;
-  letter-spacing: -0.02em;
-}
-.health-status-label {
-  font-size: 12px;
-  color: #7A5E20;
-  font-weight: 700;
-}
+.health-score-num span { font-size: 20px; color: #7A5E20; letter-spacing: -0.02em; }
+.health-status-label { font-size: 12px; color: #7A5E20; font-weight: 700; }
 
 /* Metrics */
 .metrics-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-  margin-bottom: 14px;
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 12px; margin-bottom: 14px;
 }
 .metric-card {
-  background: white;
-  border-radius: 18px;
-  padding: 14px;
+  background: white; border-radius: 18px; padding: 14px;
   border: 1px solid var(--line);
   box-shadow: 0 8px 22px rgba(70,76,230,0.04);
 }
 .metric-label {
-  font-size: 10px;
-  color: var(--light);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  font-weight: 800;
-  margin-bottom: 4px;
+  font-size: 10px; color: var(--light); text-transform: uppercase;
+  letter-spacing: 0.06em; font-weight: 800; margin-bottom: 4px;
 }
-.metric-value {
-  font-size: 20px;
-  font-weight: 800;
-  color: var(--dark);
-  letter-spacing: -0.04em;
-}
+.metric-value { font-size: 20px; font-weight: 800; color: var(--dark); letter-spacing: -0.04em; }
 
 /* Maturity */
 .maturity-card {
-  background: white;
-  border-radius: 20px;
-  padding: 16px 18px;
-  margin-bottom: 14px;
-  border: 1px solid var(--line);
+  background: white; border-radius: 20px; padding: 16px 18px;
+  margin-bottom: 14px; border: 1px solid var(--line);
   box-shadow: 0 8px 22px rgba(70,76,230,0.04);
 }
-.maturity-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  margin-bottom: 10px;
-}
-.maturity-label {
-  font-size: 10px;
-  color: var(--light);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  font-weight: 800;
-}
-.maturity-value {
-  font-size: 14px;
-  color: var(--royal);
-  font-weight: 800;
-}
-.maturity-track {
-  height: 8px;
-  background: var(--mist);
-  border-radius: 99px;
-  overflow: hidden;
-  margin-bottom: 10px;
-}
+.maturity-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px; }
+.maturity-label { font-size: 10px; color: var(--light); text-transform: uppercase; letter-spacing: 0.06em; font-weight: 800; }
+.maturity-value { font-size: 14px; color: var(--royal); font-weight: 800; }
+.maturity-track { height: 8px; background: var(--mist); border-radius: 99px; overflow: hidden; margin-bottom: 10px; }
 .maturity-fill {
-  height: 100%;
-  background: linear-gradient(90deg, var(--peri), var(--royal));
-  border-radius: 99px;
-  transition: width 1.2s cubic-bezier(0.4,0,0.2,1);
+  height: 100%; background: linear-gradient(90deg, var(--peri), var(--royal));
+  border-radius: 99px; transition: width 1.2s cubic-bezier(0.4,0,0.2,1);
 }
-.maturity-dots {
-  display: flex;
-  gap: 5px;
-  flex-wrap: wrap;
-}
-.mdot {
-  width: 8px; height: 8px;
-  border-radius: 50%;
-  background: var(--mist);
-  display: inline-block;
-}
+.maturity-dots { display: flex; gap: 5px; flex-wrap: wrap; }
+.mdot { width: 8px; height: 8px; border-radius: 50%; background: var(--mist); display: inline-block; }
 .mdot.filled { background: var(--peri); }
 .mdot.active { background: var(--royal); transform: scale(1.3); }
 
-/* Summary cards */
-.panels-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-  margin-bottom: 12px;
-}
+/* Summary panels */
+.panels-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
 .panel-card {
-  background: white;
-  border-radius: 18px;
-  border: 1px solid var(--line);
-  overflow: hidden;
-  box-shadow: 0 10px 26px rgba(70,76,230,0.045);
+  background: white; border-radius: 18px; border: 1px solid var(--line);
+  overflow: hidden; box-shadow: 0 10px 26px rgba(70,76,230,0.045);
 }
-.panel-header {
-  padding: 12px 14px 10px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
+.panel-header { padding: 12px 14px 10px; display: flex; align-items: center; gap: 8px; }
 .panel-header.problems { border-bottom: 2px solid var(--cream); }
 .panel-header.recs { border-bottom: 2px solid var(--mist); }
 .panel-title { font-size: 13px; font-weight: 800; color: var(--dark); }
-.panel-badge {
-  margin-left: auto;
-  font-size: 10px;
-  font-weight: 800;
-  padding: 2px 8px;
-  border-radius: 99px;
-}
+.panel-badge { margin-left: auto; font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 99px; }
 .badge-amber { background: #FFF0C8; color: #9A6700; }
 .badge-blue  { background: var(--mist); color: var(--royal); }
-.panel-preview {
-  padding: 8px 14px 12px;
-  font-size: 12px;
-  color: var(--mid);
-  line-height: 1.55;
-}
-.panel-item {
-  display: flex;
-  gap: 7px;
-  margin-bottom: 6px;
-  align-items: flex-start;
-}
-.bullet-tri {
-  flex-shrink: 0;
-  margin-top: 5px;
-  width: 0; height: 0;
-  border-top: 5px solid transparent;
-  border-bottom: 5px solid transparent;
-  border-left: 8px solid;
-}
-.bullet-circle {
-  flex-shrink: 0;
-  width: 8px; height: 8px;
-  border-radius: 50%;
-  margin-top: 5px;
-}
+.panel-preview { padding: 8px 14px 12px; font-size: 12px; color: var(--mid); line-height: 1.55; }
+.panel-item { display: flex; gap: 7px; margin-bottom: 6px; align-items: flex-start; }
+.bullet-tri { flex-shrink:0; margin-top:5px; width:0; height:0; border-top:5px solid transparent; border-bottom:5px solid transparent; border-left:8px solid; }
+.bullet-circle { flex-shrink:0; width:8px; height:8px; border-radius:50%; margin-top:5px; }
 
-/* Bottom sheet simulation */
+/* Sheet card (for sub-panels) */
 .sheet-card {
   background: white;
   border-radius: 26px 26px 18px 18px;
@@ -533,209 +568,24 @@ div[data-testid="stButton"] > button[kind="primary"] {
   from { transform: translateY(28px); opacity: 0; }
   to   { transform: translateY(0); opacity: 1; }
 }
-.sheet-head {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 12px;
-}
-.sheet-title {
-  font-size: 18px;
-  font-weight: 800;
-  color: var(--royal);
-  letter-spacing: -0.03em;
-}
+.sheet-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
+.sheet-title { font-size: 18px; font-weight: 800; color: var(--royal); letter-spacing: -0.03em; }
 .sheet-x {
-  width: 34px;
-  height: 34px;
-  border-radius: 50%;
-  background: #F6F6FF;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--royal);
-  font-weight: 800;
+  width:34px; height:34px; border-radius:50%; background:#F6F6FF;
+  display:flex; align-items:center; justify-content:center;
+  color:var(--royal); font-weight:800;
 }
-.sheet-item {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 10px;
-  align-items: flex-start;
-  font-size: 13px;
-  color: var(--mid);
-  line-height: 1.5;
-}
-.sheet-mini-grid {
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:12px;
-}
-.sheet-mini {
-  background:#F8F8FF;
-  border:1px solid var(--mist);
-  border-radius:16px;
-  padding:14px;
-}
-.sheet-mini-label {
-  font-size:10px;
-  color:var(--light);
-  text-transform:uppercase;
-  letter-spacing:.06em;
-  font-weight:800;
-}
-.sheet-mini-value {
-  font-size:18px;
-  color:var(--dark);
-  font-weight:800;
-  margin-top:4px;
-}
+.sheet-item { display:flex; gap:10px; margin-bottom:10px; align-items:flex-start; font-size:13px; color:var(--mid); line-height:1.5; }
+.sheet-mini-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.sheet-mini { background:#F8F8FF; border:1px solid var(--mist); border-radius:16px; padding:14px; }
+.sheet-mini-label { font-size:10px; color:var(--light); text-transform:uppercase; letter-spacing:.06em; font-weight:800; }
+.sheet-mini-value { font-size:18px; color:var(--dark); font-weight:800; margin-top:4px; }
 
 /* Photo */
-.photo-card {
-  background: white;
-  border-radius: 18px;
-  border: 1px solid var(--line);
-  overflow: hidden;
-  margin-bottom: 12px;
-}
+.photo-card { background:white; border-radius:18px; border:1px solid var(--line); overflow:hidden; margin-bottom:12px; }
 .photo-card-header {
-  padding: 12px 16px;
-  border-bottom: 1px solid var(--line);
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--light);
-  font-weight: 800;
-
-/* ── Shared overlay backdrop ── */
-.scc-backdrop {
-  display: none;
-  position: fixed;
-  inset: 0;
-  z-index: 99998;
-  background: rgba(18, 18, 38, 0.52);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
-}
-.scc-backdrop.visible { display: block; }
-
-/* mustard-tinted glow behind the modal */
-.scc-backdrop::after {
-  content: '';
-  position: absolute;
-  top: 50%; left: 50%;
-  transform: translate(-50%, -50%);
-  width: 420px; height: 420px;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(255,213,128,0.22) 0%, transparent 70%);
-  pointer-events: none;
-}
-
-/* The modal card itself */
-.scc-modal {
-  position: relative;
-  z-index: 99999;
-  background: white;
-  border-radius: 28px;
-  border: 2px solid var(--mist);
-  padding: 22px 20px 26px;
-  box-shadow: 0 30px 80px rgba(18,18,60,0.26), 0 0 0 1px rgba(178,180,244,0.18);
-  animation: sccModalIn 0.24s cubic-bezier(0.34,1.4,0.64,1);
-  margin-bottom: 14px;
-}
-@keyframes sccModalIn {
-  from { opacity: 0; transform: translateY(18px) scale(0.96); }
-  to   { opacity: 1; transform: translateY(0) scale(1); }
-}
-.scc-modal-head {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 16px;
-}
-.scc-modal-title {
-  font-size: 18px;
-  font-weight: 800;
-  color: var(--royal);
-  letter-spacing: -0.03em;
-}
-.scc-close {
-  width: 36px; height: 36px;
-  border-radius: 50%;
-  background: var(--mist);
-  border: none; cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 17px; font-weight: 800;
-  color: var(--royal);
-  flex-shrink: 0;
-  transition: background 0.15s;
-}
-.scc-close:hover { background: var(--lavender); }
-
-/* Modal Overlay */
-.modal-overlay {
-  position: fixed;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(30, 30, 50, 0.52);
-  backdrop-filter: blur(3px);
-  z-index: 9998;
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
-  padding-top: 48px;
-  animation: fadeIn 0.2s ease;
-}
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to   { opacity: 1; }
-}
-.modal-box {
-  background: white;
-  border-radius: 28px;
-  width: min(500px, 92vw);
-  max-height: 82vh;
-  overflow-y: auto;
-  padding: 22px 20px 24px;
-  position: relative;
-  box-shadow: 0 24px 60px rgba(30,30,80,0.22), 0 2px 8px rgba(70,76,230,0.10);
-  animation: slideDown 0.25s cubic-bezier(0.4,0,0.2,1);
-  z-index: 9999;
-}
-@keyframes slideDown {
-  from { transform: translateY(-28px); opacity: 0; }
-  to   { transform: translateY(0); opacity: 1; }
-}
-.modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 18px;
-}
-.modal-title {
-  font-size: 19px;
-  font-weight: 800;
-  color: var(--royal);
-  letter-spacing: -0.03em;
-}
-.modal-close-btn {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  background: #F0F1FF;
-  border: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  font-size: 18px;
-  color: var(--royal);
-  font-weight: 800;
-  flex-shrink: 0;
-  transition: background 0.15s;
-}
-.modal-close-btn:hover {
-  background: var(--mist);
-}
+  padding:12px 16px; border-bottom:1px solid var(--line);
+  font-size:11px; text-transform:uppercase; letter-spacing:0.06em; color:var(--light); font-weight:800;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -743,7 +593,6 @@ div[data-testid="stButton"] > button[kind="primary"] {
 # ─────────────────────────────────────────────
 # SVG ILLUSTRATIONS
 # ─────────────────────────────────────────────
-
 HERO_SVG = """
 <svg viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:44px;height:44px;margin-bottom:8px">
   <circle cx="22" cy="22" r="20" fill="#FFD580" opacity="0.5"/>
@@ -799,89 +648,57 @@ CHECK_SVG = """<svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/200
 # ─────────────────────────────────────────────
 # HELPERS
 # ─────────────────────────────────────────────
-
 def score_label(score):
-    if score >= 80:
-        return "Mükemmel — Neredeyse Hazır"
-    if score >= 60:
-        return "Orta — Geliştirilmeli"
-    if score >= 40:
-        return "Zayıf — Dikkat Gerekli"
+    if score >= 80: return "Mükemmel — Neredeyse Hazır"
+    if score >= 60: return "Orta — Geliştirilmeli"
+    if score >= 40: return "Zayıf — Dikkat Gerekli"
     return "Kritik — Hemen Müdahale"
-
 
 def parse_months(ready_in_str):
     text = ready_in_str.lower().replace("-", " ")
     nums = [int(s) for s in text.split() if s.isdigit()]
     if nums:
-        low = nums[0]
-        high = nums[-1] if len(nums) > 1 else low
+        low = nums[0]; high = nums[-1] if len(nums) > 1 else low
         avg = (low + high) / 2
-        progress = max(0.05, min(0.95, 1 - (avg / 12)))
-        return progress, avg
+        return max(0.05, min(0.95, 1 - (avg / 12))), avg
     return 0.3, 4
-
 
 def dots_html(progress, total=20):
     filled = max(1, round(progress * total))
     dots = []
     for i in range(total):
-        if i < filled - 1:
-            dots.append('<span class="mdot filled"></span>')
-        elif i == filled - 1:
-            dots.append('<span class="mdot active"></span>')
-        else:
-            dots.append('<span class="mdot"></span>')
+        if i < filled - 1: dots.append('<span class="mdot filled"></span>')
+        elif i == filled - 1: dots.append('<span class="mdot active"></span>')
+        else: dots.append('<span class="mdot"></span>')
     return "".join(dots)
 
-
-def tri(color):
-    return f'<span class="bullet-tri" style="border-left-color:{color}"></span>'
-
-
-def circle(color):
-    return f'<span class="bullet-circle" style="background:{color}"></span>'
-
+def tri(color): return f'<span class="bullet-tri" style="border-left-color:{color}"></span>'
+def circle(color): return f'<span class="bullet-circle" style="background:{color}"></span>'
 
 def turning_interval_days(compost_type):
-    if "Sıcak" in compost_type:
-        return 3
-    if "Bahçe" in compost_type:
-        return 7
+    if "Sıcak" in compost_type: return 3
+    if "Bahçe" in compost_type: return 7
     return 10
 
-
 def turning_message(days_until):
-    if days_until < 0:
-        return f"{abs(days_until)} gün gecikti"
-    if days_until == 0:
-        return "Bugün"
-    if days_until == 1:
-        return "Yarın"
+    if days_until < 0: return f"{abs(days_until)} gün gecikti"
+    if days_until == 0: return "Bugün"
+    if days_until == 1: return "Yarın"
     return f"{days_until} gün sonra"
 
-
 def last_turn_message(days_since_turn):
-    if days_since_turn == 0:
-        return "Bugün"
-    if days_since_turn == 1:
-        return "Dün"
+    if days_since_turn == 0: return "Bugün"
+    if days_since_turn == 1: return "Dün"
     return f"{days_since_turn} gün önce"
-
 
 def journey_from_age(age_days, compost_type):
     total_days = 90 if "Sıcak" in compost_type else 180
     pct = max(8, min(95, int((age_days / total_days) * 100)))
-    if pct < 25:
-        stage = "Başlangıç"
-    elif pct < 65:
-        stage = "Aktif"
-    elif pct < 90:
-        stage = "Olgunlaşma"
-    else:
-        stage = "Hazır"
+    if pct < 25: stage = "Başlangıç"
+    elif pct < 65: stage = "Aktif"
+    elif pct < 90: stage = "Olgunlaşma"
+    else: stage = "Hazır"
     return stage, pct
-
 
 def make_short_label(text, max_words=3):
     words = re.sub(r"[.!?]", "", str(text)).split()
@@ -893,26 +710,39 @@ PALETTE = ["#464CE6", "#7C80ED", "#B2B4F4"]
 # SESSION STATE
 # ─────────────────────────────────────────────
 today = date.today()
-if "sheet" not in st.session_state:
-    st.session_state.sheet = None
-if "care_done" not in st.session_state:
-    st.session_state.care_done = False
-if "edit_open" not in st.session_state:
-    st.session_state.edit_open = False
-if "analysis_open" not in st.session_state:
-    st.session_state.analysis_open = False
-if "compost_type" not in st.session_state:
-    st.session_state.compost_type = "Ev tipi / soğuk kompost"
-if "start_date" not in st.session_state:
-    st.session_state.start_date = today - timedelta(days=22)
-if "last_turn_date" not in st.session_state:
-    st.session_state.last_turn_date = today - timedelta(days=3)
-if "material_amount" not in st.session_state:
-    st.session_state.material_amount = 2.0
-if "ai_data" not in st.session_state:
-    st.session_state.ai_data = None
-if "ai_image" not in st.session_state:
-    st.session_state.ai_image = None
+defaults = {
+    "sheet": None,
+    "care_done": False,
+    "edit_open": False,
+    "analysis_open": False,
+    "show_balloons": False,
+    "compost_type": "Ev tipi / soğuk kompost",
+    "start_date": today - timedelta(days=22),
+    "last_turn_date": today - timedelta(days=3),
+    "material_amount": 2.0,
+    "ai_data": None,
+    "ai_image": None,
+}
+for k, v in defaults.items():
+    if k not in st.session_state:
+        st.session_state[k] = v
+
+# ─────────────────────────────────────────────
+# RULE-BASED VALUES
+# ─────────────────────────────────────────────
+compost_type = st.session_state.compost_type
+start_date   = st.session_state.start_date
+last_turn_date  = st.session_state.last_turn_date
+material_amount = st.session_state.material_amount
+
+age_days        = max(0, (date.today() - start_date).days)
+interval        = turning_interval_days(compost_type)
+days_since_turn = max(0, (date.today() - last_turn_date).days)
+last_turn_text  = last_turn_message(days_since_turn)
+next_turn_date  = last_turn_date + timedelta(days=interval)
+days_until_turn = (next_turn_date - date.today()).days
+turn_label      = turning_message(days_until_turn)
+rule_stage, rule_journey_pct = journey_from_age(age_days, compost_type)
 
 # ─────────────────────────────────────────────
 # HERO
@@ -928,70 +758,76 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# ─────────────────────────────────────────────
-# RULE-BASED VALUES
-# ─────────────────────────────────────────────
-compost_type = st.session_state.compost_type
-start_date = st.session_state.start_date
-last_turn_date = st.session_state.last_turn_date
-material_amount = st.session_state.material_amount
-
-age_days = max(0, (date.today() - start_date).days)
-interval = turning_interval_days(compost_type)
-days_since_turn = max(0, (date.today() - last_turn_date).days)
-last_turn_text = last_turn_message(days_since_turn)
-next_turn_date = last_turn_date + timedelta(days=interval)
-days_until_turn = (next_turn_date - date.today()).days
-turn_label = turning_message(days_until_turn)
-rule_stage, rule_journey_pct = journey_from_age(age_days, compost_type)
-
-# ─────────────────────────────────────────────
+# ═══════════════════════════════════════════════════════
 # ANALYSIS MODAL OVERLAY
-# ─────────────────────────────────────────────
+# Opens as a true fixed overlay with blurred backdrop.
+# The modal card is rendered first (z-index high),
+# then a full-page backdrop is JS-hoisted to body.
+# ═══════════════════════════════════════════════════════
 if st.session_state.analysis_open:
-    # JS-hoisted backdrop
+
+    # 1. Inject backdrop into body via JS
     st.markdown("""
-<div id="sccAnalysisBackdrop" class="scc-backdrop visible"></div>
+<style>
+#sccAbdrop {
+  position:fixed; inset:0; z-index:99997;
+  background:rgba(18,18,38,0.55);
+  backdrop-filter:blur(7px);
+  -webkit-backdrop-filter:blur(7px);
+  animation:sccFd .18s ease;
+}
+@keyframes sccFd{from{opacity:0}to{opacity:1}}
+</style>
+<div id="sccAbdrop"></div>
 <script>
-(function hoistBackdrop(){
-  var el = document.getElementById('sccAnalysisBackdrop');
-  if(el && el.parentElement !== document.body){ document.body.appendChild(el); }
-})();
+!function hoist(){
+  var e=document.getElementById('sccAbdrop');
+  if(e&&e.parentElement!==document.body)document.body.appendChild(e);
+}();
 setTimeout(function(){
-  var el = document.getElementById('sccAnalysisBackdrop');
-  if(el && el.parentElement !== document.body){ document.body.appendChild(el); }
-}, 200);
+  var e=document.getElementById('sccAbdrop');
+  if(e&&e.parentElement!==document.body)document.body.appendChild(e);
+},150);
 </script>
 """, unsafe_allow_html=True)
 
-    # Modal card (stays in flow, visually on top via z-index)
+    # 2. Modal card — sits above backdrop
     st.markdown("""
-<div class="scc-modal">
-  <div class="scc-modal-head">
-    <div class="scc-modal-title">📷 Kompostunu Analiz Et</div>
-  </div>
-  <div class="upload-zone">
-    <div class="upload-title">Fotoğraf yükle</div>
-    <div class="upload-hint">Fotoğraf seç veya sürükle bırak • JPG, PNG</div>
-  </div>
+<div style="
+  position:relative; z-index:99999;
+  background:white; border-radius:28px;
+  border:2px solid #E8E8FC;
+  padding:24px 20px 10px;
+  box-shadow:0 32px 80px rgba(18,18,60,0.28), 0 0 0 1px rgba(178,180,244,0.18);
+  animation:mcSl .22s cubic-bezier(0.34,1.4,0.64,1);
+  margin-bottom:0;
+">
+@keyframes mcSl{from{opacity:0;transform:translateY(18px) scale(0.96)}to{opacity:1;transform:translateY(0) scale(1)}}
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+  <div style="font-size:19px;font-weight:800;color:#464CE6;letter-spacing:-0.03em;">📷 Kompostunu Analiz Et</div>
+</div>
+<div class="upload-zone">
+  <div class="upload-title">Fotoğraf yükle</div>
+  <div class="upload-hint">Fotoğraf seç veya sürükle bırak • JPG, PNG</div>
+</div>
 """, unsafe_allow_html=True)
 
     uploaded_file = st.file_uploader(
         "Fotoğraf",
-        type=["jpg", "jpeg", "png"],
+        type=["jpg","jpeg","png"],
         label_visibility="collapsed",
         key="analysis_uploader"
     )
 
-    btn_col1, btn_col2 = st.columns([3, 1])
-    with btn_col1:
+    acol1, acol2 = st.columns([3, 1])
+    with acol1:
         analyze_clicked = st.button("🔍 Kompostu Analiz Et", type="primary", use_container_width=True, key="do_analyze")
-    with btn_col2:
-        close_analysis_clicked = st.button("✕", use_container_width=True, key="close_analysis")
+    with acol2:
+        close_analysis = st.button("✕ Kapat", use_container_width=True, key="close_analysis")
 
     st.markdown("</div>", unsafe_allow_html=True)
 
-    if close_analysis_clicked:
+    if close_analysis:
         st.session_state.analysis_open = False
         st.rerun()
 
@@ -1012,7 +848,6 @@ Return ONLY valid JSON with this exact structure:
   "problems": [],
   "recommendations": []
 }}
-
 User tracking data:
 - Compost type: {compost_type}
 - Start date: {start_date}
@@ -1022,7 +857,6 @@ User tracking data:
 - Days since last turning: {days_since_turn}
 - Next turning due in: {days_until_turn} days
 - Approximate material amount: {material_amount} kg
-
 Rules:
 * health_score: integer 0-100
 * moisture: one of — Kuru, Optimal, Islak
@@ -1035,7 +869,7 @@ Rules:
             with st.spinner("Kompostun analiz ediliyor..."):
                 try:
                     response = model.generate_content([prompt, image])
-                    clean = response.text.strip().replace("```json", "").replace("```", "")
+                    clean = response.text.strip().replace("```json","").replace("```","")
                     data = json.loads(clean)
                     st.session_state.ai_data = data
                     st.session_state.ai_image = image.copy()
@@ -1045,11 +879,9 @@ Rules:
                 except Exception as e:
                     st.error(f"Analiz sırasında hata oluştu: {e}")
 
-
-
-# ─────────────────────────────────────────────
+# ═══════════════════════════════════════════════════════
 # MY COMPOST DASHBOARD
-# ─────────────────────────────────────────────
+# ═══════════════════════════════════════════════════════
 st.markdown(f"""
 <div class="card">
   <div class="card-head">
@@ -1059,7 +891,6 @@ st.markdown(f"""
     </div>
     <div class="icon-chip">{SPROUT_SVG}</div>
   </div>
-
   <div class="compost-summary">
     <div class="summary-main">
       <div class="summary-label">Kompost Yaşı</div>
@@ -1072,7 +903,6 @@ st.markdown(f"""
       <div class="summary-note">Son çevirme: {last_turn_text}</div>
     </div>
   </div>
-
   <div class="card-title" style="font-size:15px;margin-top:16px;">Compost Journey</div>
   <div class="journey-row">
     <span class="journey-step {'active' if rule_stage == 'Başlangıç' else ''}">Başlangıç</span>
@@ -1086,7 +916,7 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# Clickable compost info pills — equal width columns
+# ── Info pills (equal width) ──
 p1, p2, p3 = st.columns([1, 1, 1])
 with p1:
     if st.button(compost_type, use_container_width=True, key="edit_type_pill"):
@@ -1094,14 +924,12 @@ with p1:
         st.session_state.analysis_open = False
         st.session_state.sheet = None
         st.rerun()
-
 with p2:
     if st.button(f"Yaklaşık {material_amount:.1f} kg", use_container_width=True, key="edit_amount_pill"):
         st.session_state.edit_open = True
         st.session_state.analysis_open = False
         st.session_state.sheet = None
         st.rerun()
-
 with p3:
     if st.button(f"Başlangıç: {start_date.strftime('%d.%m.%Y')}", use_container_width=True, key="edit_start_pill"):
         st.session_state.edit_open = True
@@ -1115,30 +943,49 @@ if st.button("📷 Kompostunu Analiz Et", use_container_width=True, key="open_an
     st.session_state.sheet = None
     st.rerun()
 
-# ─────────────────────────────────────────────
-# EDIT PANEL — OVERLAY MODAL
-# ─────────────────────────────────────────────
+# ═══════════════════════════════════════════════════════
+# EDIT MODAL OVERLAY — same system as analysis
+# ═══════════════════════════════════════════════════════
 if st.session_state.edit_open:
-    # JS-hoisted backdrop (mustard tint variant)
+
+    # 1. Backdrop (warm mustard-tinted)
     st.markdown("""
-<div id="sccEditBackdrop" class="scc-backdrop visible" style="background:rgba(28,22,10,0.48)"></div>
+<style>
+#sccEbdrop {
+  position:fixed; inset:0; z-index:99997;
+  background:rgba(28,20,4,0.50);
+  backdrop-filter:blur(7px);
+  -webkit-backdrop-filter:blur(7px);
+  animation:sccFd .18s ease;
+}
+</style>
+<div id="sccEbdrop"></div>
 <script>
-(function hoistEdit(){
-  var el = document.getElementById('sccEditBackdrop');
-  if(el && el.parentElement !== document.body){ document.body.appendChild(el); }
-})();
+!function hoist(){
+  var e=document.getElementById('sccEbdrop');
+  if(e&&e.parentElement!==document.body)document.body.appendChild(e);
+}();
 setTimeout(function(){
-  var el = document.getElementById('sccEditBackdrop');
-  if(el && el.parentElement !== document.body){ document.body.appendChild(el); }
-}, 200);
+  var e=document.getElementById('sccEbdrop');
+  if(e&&e.parentElement!==document.body)document.body.appendChild(e);
+},150);
 </script>
 """, unsafe_allow_html=True)
 
+    # 2. Modal card
     st.markdown("""
-<div class="scc-modal" style="border-color: var(--cream); box-shadow: 0 30px 80px rgba(28,22,10,0.22), 0 0 0 1px rgba(255,213,128,0.3);">
-  <div class="scc-modal-head">
-    <div class="scc-modal-title">🌱 Kompost Bilgileri</div>
-  </div>
+<div style="
+  position:relative; z-index:99999;
+  background:white; border-radius:28px;
+  border:2px solid #FFE9BD;
+  padding:24px 20px 10px;
+  box-shadow:0 32px 80px rgba(28,20,0,0.22), 0 0 0 1px rgba(255,213,128,0.28);
+  animation:mcSl .22s cubic-bezier(0.34,1.4,0.64,1);
+  margin-bottom:0;
+">
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+  <div style="font-size:19px;font-weight:800;color:#464CE6;letter-spacing:-0.03em;">🌱 Kompost Bilgileri</div>
+</div>
 """, unsafe_allow_html=True)
 
     with st.form("compost_info_form"):
@@ -1154,24 +1001,21 @@ setTimeout(function(){
             new_turn = st.date_input("Son çevirme tarihi", value=st.session_state.last_turn_date)
         new_amount = st.number_input(
             "Yaklaşık materyal miktarı (kg)",
-            min_value=0.0,
-            value=float(st.session_state.material_amount),
-            step=0.5
+            min_value=0.0, value=float(st.session_state.material_amount), step=0.5
         )
         ef1, ef2 = st.columns([3, 1])
         with ef1:
             saved = st.form_submit_button("✓ Kaydet", use_container_width=True)
         with ef2:
-            cancel = st.form_submit_button("✕", use_container_width=True)
+            cancel = st.form_submit_button("✕ İptal", use_container_width=True)
 
         if saved:
             st.session_state.compost_type = new_type
-            st.session_state.start_date = new_start
+            st.session_state.start_date   = new_start
             st.session_state.last_turn_date = new_turn
             st.session_state.material_amount = new_amount
             st.session_state.edit_open = False
             st.rerun()
-
         if cancel:
             st.session_state.edit_open = False
             st.rerun()
@@ -1224,13 +1068,13 @@ else:
 # AI RESULTS
 # ─────────────────────────────────────────────
 if st.session_state.ai_data is not None:
-    data = st.session_state.ai_data
+    data  = st.session_state.ai_data
     image = st.session_state.ai_image
     score = data["health_score"]
     progress, avg_months = parse_months(data.get("ready_in", "4 ay"))
     bar_pct = int(progress * 100)
     probs = data.get("problems", [])
-    recs = data.get("recommendations", [])
+    recs  = data.get("recommendations", [])
 
     st.markdown(f"""
 <div class="health-card">
@@ -1303,25 +1147,18 @@ if st.session_state.ai_data is not None:
 
     s1, s2, s3, s4 = st.columns(4)
     with s1:
-        if st.button("Sorunlar", use_container_width=True):
-            st.session_state.sheet = "problems"
+        if st.button("Sorunlar", use_container_width=True): st.session_state.sheet = "problems"
     with s2:
-        if st.button("Öneriler", use_container_width=True):
-            st.session_state.sheet = "recommendations"
+        if st.button("Öneriler", use_container_width=True): st.session_state.sheet = "recommendations"
     with s3:
-        if st.button("Durum", use_container_width=True):
-            st.session_state.sheet = "status"
+        if st.button("Durum", use_container_width=True): st.session_state.sheet = "status"
     with s4:
-        if st.button("Fotoğraf", use_container_width=True):
-            st.session_state.sheet = "photo"
+        if st.button("Fotoğraf", use_container_width=True): st.session_state.sheet = "photo"
 
-    # ── Sheet modals ──────────────────────────────
     if st.session_state.sheet:
-        sheet_close_col1, sheet_close_col2 = st.columns([8, 1])
-        with sheet_close_col2:
-            if st.button("✕", key="close_sheet_btn"):
-                st.session_state.sheet = None
-                st.rerun()
+        if st.button("× Kapat", use_container_width=True):
+            st.session_state.sheet = None
+            st.rerun()
 
     if st.session_state.sheet == "problems":
         items = "".join([
@@ -1329,15 +1166,10 @@ if st.session_state.ai_data is not None:
             for p in probs
         ]) or '<div class="sheet-item"><span>Belirgin sorun yok.</span></div>'
         st.markdown(f"""
-<div class="modal-overlay">
-  <div class="modal-box">
-    <div class="modal-header">
-      <div class="modal-title">⚠️ Sorunlar</div>
-    </div>
-    {items}
-  </div>
-</div>
-""", unsafe_allow_html=True)
+<div class="sheet-card">
+  <div class="sheet-head"><div class="sheet-title">Sorunlar</div><div class="sheet-x">×</div></div>
+  {items}
+</div>""", unsafe_allow_html=True)
 
     elif st.session_state.sheet == "recommendations":
         items = "".join([
@@ -1345,54 +1177,27 @@ if st.session_state.ai_data is not None:
             for i, r in enumerate(recs)
         ]) or '<div class="sheet-item"><span>Öneri bulunamadı.</span></div>'
         st.markdown(f"""
-<div class="modal-overlay">
-  <div class="modal-box">
-    <div class="modal-header">
-      <div class="modal-title">✅ Öneriler</div>
-    </div>
-    {items}
-  </div>
-</div>
-""", unsafe_allow_html=True)
+<div class="sheet-card">
+  <div class="sheet-head"><div class="sheet-title">Öneriler</div><div class="sheet-x">×</div></div>
+  {items}
+</div>""", unsafe_allow_html=True)
 
     elif st.session_state.sheet == "status":
         st.markdown(f"""
-<div class="modal-overlay">
-  <div class="modal-box">
-    <div class="modal-header">
-      <div class="modal-title">📊 Kompost Durumu</div>
-    </div>
-    <div class="sheet-mini-grid">
-      <div class="sheet-mini">
-        <div class="sheet-mini-label">Nem</div>
-        <div class="sheet-mini-value">{data["moisture"]}</div>
-      </div>
-      <div class="sheet-mini">
-        <div class="sheet-mini-label">C/N Dengesi</div>
-        <div class="sheet-mini-value">{data["balance"]}</div>
-      </div>
-      <div class="sheet-mini">
-        <div class="sheet-mini-label">Kompost Yaşı</div>
-        <div class="sheet-mini-value">{age_days} gün</div>
-      </div>
-      <div class="sheet-mini">
-        <div class="sheet-mini-label">Sonraki Çevirme</div>
-        <div class="sheet-mini-value">{turn_label}</div>
-      </div>
-    </div>
+<div class="sheet-card">
+  <div class="sheet-head"><div class="sheet-title">Kompost Durumu</div><div class="sheet-x">×</div></div>
+  <div class="sheet-mini-grid">
+    <div class="sheet-mini"><div class="sheet-mini-label">Nem</div><div class="sheet-mini-value">{data["moisture"]}</div></div>
+    <div class="sheet-mini"><div class="sheet-mini-label">C/N Dengesi</div><div class="sheet-mini-value">{data["balance"]}</div></div>
+    <div class="sheet-mini"><div class="sheet-mini-label">Kompost Yaşı</div><div class="sheet-mini-value">{age_days} gün</div></div>
+    <div class="sheet-mini"><div class="sheet-mini-label">Sonraki Çevirme</div><div class="sheet-mini-value">{turn_label}</div></div>
   </div>
-</div>
-""", unsafe_allow_html=True)
+</div>""", unsafe_allow_html=True)
 
     elif st.session_state.sheet == "photo":
         st.markdown("""
-<div class="modal-overlay">
-  <div class="modal-box">
-    <div class="modal-header">
-      <div class="modal-title">🖼️ Yüklenen Fotoğraf</div>
-    </div>
-""", unsafe_allow_html=True)
+<div class="sheet-card">
+  <div class="sheet-head"><div class="sheet-title">Yüklenen Fotoğraf</div><div class="sheet-x">×</div></div>
+</div>""", unsafe_allow_html=True)
         if image is not None:
             st.image(image, use_container_width=True)
-        st.markdown("</div></div>", unsafe_allow_html=True)
-
