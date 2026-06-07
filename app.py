@@ -460,6 +460,16 @@ div[data-testid="stVerticalBlockBorderWrapper"] .stCheckbox label p {
 .sheet-title { font-size: 18px; font-weight: 800; color: var(--royal); letter-spacing: -0.03em; margin-bottom: 12px; }
 .sheet-item { display:flex; gap:10px; margin-bottom:10px; align-items:flex-start; font-size:13px; color:var(--mid); line-height:1.5; }
 
+
+.info-wrapper{
+background:white;
+border:1.5px solid #E8E8FC;
+border-radius:24px;
+padding:16px;
+margin-bottom:16px;
+box-shadow:0 8px 22px rgba(70,76,230,0.05);
+}
+
 .info-header-btn div[data-testid="stButton"] > button{
 background:#464CE6 !important;
 color:white !important;
@@ -1093,8 +1103,8 @@ st.markdown(
 )
 
 
-# ─── Kompost Bilgileri Başlığı ───
-st.markdown('<div class="info-header-btn">', unsafe_allow_html=True)
+# ─── Kompost Bilgileri Kartı ───
+st.markdown('<div class="info-wrapper"><div class="info-header-btn">', unsafe_allow_html=True)
 if st.button("Kompost Bilgileri", use_container_width=True, key="compost_info_header"):
     edit_compost_dialog()
 st.markdown('</div>', unsafe_allow_html=True)
@@ -1119,6 +1129,8 @@ with row2_col1:
 with row2_col2:
     if st.button(f"Koku: {odor_status}", use_container_width=True, key="edit_odor_pill"):
         edit_compost_dialog()
+
+st.markdown("</div>", unsafe_allow_html=True)
 
 # ─── Analyze button ───
 if st.button("📷 Kompostunu Analiz Et", type="primary", use_container_width=True, key="open_analysis_main"):
