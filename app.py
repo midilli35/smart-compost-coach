@@ -623,6 +623,8 @@ def normalize_ai_data(data: dict) -> dict:
     score = max(0, min(100, score))
 
     current_status = str(data.get("current_status") or "Kompost genel olarak izlenebilir durumda; bakım adımlarına göre süreç iyileştirilebilir.").strip()
+    moisture_check = str(data.get("moisture_check") or "Avuç testiyle nemi kontrol et; sıkınca hafif nemli kalmalı, su damlamamalı.").strip()
+    carbon_nitrogen_note = str(data.get("carbon_nitrogen_note") or "Kahverengi ve yeşil materyal oranını dengede tut; koku artarsa kahverengi ekle.").strip()
     coach_note = data.get("coach_note") or data.get("coach_message") or ""
     if not coach_note:
         coach_note = "Kompostunu izlemeye devam et; küçük bakım adımları süreci hızlandırır."
@@ -633,6 +635,8 @@ def normalize_ai_data(data: dict) -> dict:
         "balance": data.get("balance", "Belirsiz"),
         "ready_in": data.get("ready_in", "3-6 ay"),
         "current_status": current_status,
+        "moisture_check": moisture_check,
+        "carbon_nitrogen_note": carbon_nitrogen_note,
         "issue": str(issue).strip() or "Belirgin sorun yok",
         "detected_problems": problems or [str(issue).strip() or "Belirgin sorun yok"],
         "recommendations": recs or ["Kompostu nazikçe karıştır ve hava almasını sağla."],
@@ -661,14 +665,26 @@ def make_weekly_goals(
     # 3. AI nemi
     if ai_data:
         moisture = ai_data.get("moisture", "")
-        issue = ai_data.get("issue", "").lower()
+        issue = (
+            ai_data.get("issue", "") + " "
+            + " ".join(ai_data.get("detected_problems", [])) + " "
+            + " ".join(ai_data.get("recommendations", []))
+        ).lower()
 
         if moisture == "Kuru":
             goals.append("Bir miktar su ekle")
+            goals.append("Nemi avuç testiyle kontrol et")
         elif moisture == "Islak":
             goals.append("Kuru yaprak veya karton ekle")
+            goals.append("Nemi avuç testiyle kontrol et")
         elif moisture == "Optimal":
-            goals.append("Avuç testi yap")
+            goals.append("Nemi avuç testiyle kontrol et")
+
+        balance = ai_data.get("balance", "")
+        if balance == "Karbon Fazla":
+            goals.append("Yeşil atık oranını artır")
+        elif balance == "Azot Fazla":
+            goals.append("Kahverengi materyal ekle")
 
         # 4. AI görsel sorunu
         if any(word in issue for word in ["sıkış", "kompakt", "yoğun", "hava"]):
@@ -764,6 +780,8 @@ Required JSON:
   "balance": "",
   "ready_in": "",
   "current_status": "",
+  "moisture_check": "",
+  "carbon_nitrogen_note": "",
   "issue": "",
   "detected_problems": [],
   "recommendations": [],
@@ -781,18 +799,26 @@ User data:
 - Approximate material amount: {material_amount} kg
 - User odor observation: {odor_status}
 
+Compost coaching logic:
+- Too wet or smelly often means too much green/nitrogen; suggest dry leaves, cardboard, paper, and turning.
+- Too dry or slow decomposition may need water and smaller pieces; mention avuç testi.
+- Too much brown/carbon can slow compost; suggest adding small green kitchen scraps.
+- Good compost should be moist like a squeezed sponge, airy, and mixed.
+
 Rules:
 - health_score: integer 0-100
 - moisture: one of "Kuru", "Optimal", "Islak"
 - balance: one of "Karbon Fazla", "Dengeli", "Azot Fazla"
 - ready_in: short Turkish estimate, e.g. "2-3 ay"
-- current_status: 1 short Turkish sentence, max 22 words. Explain what the compost currently looks like.
-- issue: one main Turkish problem phrase, max 7 words
-- detected_problems: 2-3 Turkish bullet-style sentences, each max 14 words. Mention visible clues when possible: dry leaves/cardboard, green material, brown material, wetness, clumping, large pieces, air/turning.
-- recommendations: 2-3 practical Turkish actions, each max 13 words. Be specific, e.g. "Kuru yaprak veya karton ekle", "Yeşil atık oranını artır", "Büyük parçaları küçült".
-- coach_note: one friendly Turkish sentence, max 20 words
-- Do not be too long, but be more informative than one-word labels.
-- If the image is unclear, say what can still be checked manually.
+- current_status: 1 Turkish sentence, max 20 words. Explain the visible compost condition without being generic.
+- moisture_check: 1 Turkish sentence, max 18 words. Always mention the avuç testi and what the user should feel/see.
+- carbon_nitrogen_note: 1 Turkish sentence, max 20 words. Mention kahverengi/yeşil oranı or carbon/nitrogen balance.
+- issue: one main Turkish problem phrase, max 7 words.
+- detected_problems: 2-3 Turkish bullet-style sentences, each max 13 words. Refer to visible clues when possible: kahverengi materyal, yeşil atık, nem, topaklanma, büyük parçalar, hava/çevirme.
+- recommendations: 2-3 practical Turkish actions, each max 12 words. Include at least one action about moisture or carbon/nitrogen balance when relevant.
+- coach_note: one friendly Turkish sentence, max 18 words.
+- Keep the total response compact: informative, but not long.
+- If the image is unclear, give manual checks: avuç testi, koku, kahverengi/yeşil oranı.
 """
     response = model.generate_content([prompt, image])
     return normalize_ai_data(safe_json_loads(response.text))
@@ -972,6 +998,8 @@ def results_dialog():
     bar_pct = int(progress * 100)
     issue = data.get("issue", "Belirgin sorun yok")
     current_status = data.get("current_status", "Kompost genel olarak izlenebilir durumda.")
+    moisture_check = data.get("moisture_check", "Avuç testiyle nemi kontrol et; sıkınca hafif nemli kalmalı.")
+    carbon_nitrogen_note = data.get("carbon_nitrogen_note", "Kahverengi ve yeşil materyal oranını dengede tut.")
     problems = data.get("detected_problems", [issue])[:3]
     recs = data.get("recommendations", [])[:3]
 
@@ -1039,6 +1067,8 @@ def results_dialog():
 <div class="sheet-card">
   <div class="sheet-title">Mevcut Durum</div>
   <div class="sheet-item">{tri("#464CE6")}<span>{current_status}</span></div>
+  <div class="sheet-item">{tri("#7C80ED")}<span>{moisture_check}</span></div>
+  <div class="sheet-item">{tri("#B8CCB6")}<span>{carbon_nitrogen_note}</span></div>
   <div class="sheet-item">{tri("#E8A020")}<span><b>Ana nokta:</b> {issue}</span></div>
 </div>
 """,
