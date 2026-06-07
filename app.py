@@ -358,6 +358,63 @@ div[data-testid="stButton"] > button:active {
   font-weight: 600;
 }
 
+
+/* ── JOURNEY + CHECK-IN ── */
+.journey-card {
+  background: white;
+  border-radius: 18px;
+  padding: 18px;
+  border: 1px solid #EDE8DC;
+  margin-bottom: 16px;
+}
+.journey-title {
+  font-family: 'Fraunces', serif;
+  font-size: 16px;
+  color: var(--dark);
+  margin-bottom: 12px;
+}
+.journey-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  margin-bottom: 12px;
+  color: var(--light);
+}
+.journey-step.active {
+  color: var(--royal);
+  font-weight: 700;
+}
+.journey-track {
+  height: 10px;
+  background: var(--mist);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.journey-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--peri), var(--royal));
+  border-radius: 999px;
+  transition: width 1s ease;
+}
+.check-card {
+  background: #FFFDF7;
+  border: 1px solid #EDE8DC;
+  border-radius: 18px;
+  padding: 16px 18px;
+  margin-bottom: 16px;
+}
+.check-title {
+  font-family: 'Fraunces', serif;
+  font-size: 16px;
+  color: var(--dark);
+  margin-bottom: 4px;
+}
+.check-sub {
+  font-size: 12px;
+  color: var(--mid);
+  margin-bottom: 10px;
+}
+
 /* ── FILE UPLOADER STYLE ── */
 .stFileUploader [data-testid="stFileUploaderDropzone"] {
   background: #FFFDF7 !important;
@@ -455,6 +512,17 @@ CHECK_SVG = """<svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/200
 # ─────────────────────────────────────────────
 # HELPERS
 # ─────────────────────────────────────────────
+
+
+def journey_state(score):
+    """Return stage label and progress percentage based on health score."""
+    if score < 40:
+        return "Başlangıç", 25
+    if score < 70:
+        return "Aktif", 50
+    if score < 90:
+        return "Olgunlaşma", 75
+    return "Hazır", 100
 
 def score_label(score):
     if score >= 80: return "Mükemmel — Neredeyse Hazır"
@@ -604,6 +672,51 @@ Rules:
   <div class="maturity-dots">{dots_html(progress)}</div>
 </div>
 """, unsafe_allow_html=True)
+
+                # ── COMPOST JOURNEY ──
+                current_stage, journey_pct = journey_state(score)
+
+                start_class = "active" if current_stage == "Başlangıç" else ""
+                active_class = "active" if current_stage == "Aktif" else ""
+                mature_class = "active" if current_stage == "Olgunlaşma" else ""
+                ready_class = "active" if current_stage == "Hazır" else ""
+
+                st.markdown(f"""
+<div class="journey-card">
+  <div class="journey-title">🌱 Compost Journey</div>
+
+  <div class="journey-row">
+    <span class="journey-step {start_class}">🌱 Başlangıç</span>
+    <span class="journey-step {active_class}">🪱 Aktif</span>
+    <span class="journey-step {mature_class}">🌿 Olgunlaşma</span>
+    <span class="journey-step {ready_class}">✅ Hazır</span>
+  </div>
+
+  <div class="journey-track">
+    <div class="journey-fill" style="width:{journey_pct}%"></div>
+  </div>
+</div>
+""", unsafe_allow_html=True)
+
+                # ── DAILY CHECK-IN ──
+                st.markdown("""
+<div class="check-card">
+  <div class="check-title">✅ Günlük Kontrol</div>
+  <div class="check-sub">Bugünkü küçük görev: kompostu havalandırmayı unutma.</div>
+</div>
+""", unsafe_allow_html=True)
+
+                turned_today = st.radio(
+                    "Bugün kompostu çevirdin mi?",
+                    ["Henüz Değil", "Evet"],
+                    horizontal=True
+                )
+
+                if turned_today == "Evet":
+                    st.success("Harika! Kompostun daha sağlıklı hale geliyor 🌱")
+                    st.balloons()
+                else:
+                    st.info("Kompostu çevirmek havalanmayı artırır ve ayrışmayı hızlandırır.")
 
                 # ── SIDE-BY-SIDE PANELS ──
                 probs = data.get("problems", [])
